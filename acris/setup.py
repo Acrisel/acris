@@ -17,6 +17,7 @@ __init__.py module that should be in the same directory as your setup.py file
 
 To create package and upload:
 
+  python setup.py register
   python setup.py sdist
   python setup.py sdist upload
 
