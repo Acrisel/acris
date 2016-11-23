@@ -193,13 +193,14 @@ In main process:
 .. code-back:: python
 	
 	import logging
+	import time
 	
-	module_logger=logging.getLogger(__name__)
+	logger=logging.getLogger(__name__)
 	
-	mplogger=MpLogger()
+	mplogger=MpLogger(logging_level=logging.DEBUG)
 	mplogger.start()
 	
-	module_logger.debug("starting sub processes")
+	logger.debug("starting sub processes")
 	# running processes
 	module_logger.debug("joining sub processes")
 	
@@ -211,8 +212,9 @@ In main process:
 	
 	import logging
 	
-	module_logger=logging.getLogger(__name__)
+	logger=logging.getLogger(__name__)
 	
 	module_logger.debug("logging from sub process")
+	
    
    
