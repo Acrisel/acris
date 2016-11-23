@@ -51,8 +51,6 @@ or whatever URL you want. Again, this information is optional.
 '''
 URL = 'https://github.com/Acrisel/acris'
 VERSION =__import__(PACKAGE).__version__
-print(VERSION)
-exit()
 
 # Warn if we are installing over top of an existing installation. This can
 # cause issues where files that were deleted from a more recent Accord are
