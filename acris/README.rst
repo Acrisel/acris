@@ -7,7 +7,6 @@ Overview
 
 **acris** is a python library providing useful programming patterns.
 
-
 threaded
 ========
 
@@ -142,6 +141,78 @@ example output
     A 3
     B 1
 
+TimedSizedRotatingHandler
+=========================
+	
+Use TimedSizedRotatingHandler is combining TimedRotatingFileHandler with RotatingFileHandler.  
+Usage as handler with logging is as defined in Python's logging how-to
+	
+example
+-------
 
+.. code-back:: python
+	
+	import logging
+	
+	# create logger
+	logger = logging.getLogger('simple_example')
+	logger.setLevel(logging.DEBUG)
+	
+	# create console handler and set level to debug
+	ch = logging.TimedRotatingFileHandler()
+	ch.setLevel(logging.DEBUG)
+	
+	# create formatter
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	
+	# add formatter to ch
+	ch.setFormatter(formatter)
+	
+	# add ch to logger
+	logger.addHandler(ch)
+	
+	# 'application' code
+	logger.debug('debug message')
+	logger.info('info message')
+	logger.warn('warn message')
+	logger.error('error message')
+	logger.critical('critical message')	
 
+MpLogger
+========
+
+Multiprocessor logger using QueueListener and QueueHandler
+
+It uses TimedSizedRotatingHandler as its logging handler
+	
+example
+-------
+
+In main process:
+	
+.. code-back:: python
+	
+	import logging
+	
+	module_logger=logging.getLogger(__name__)
+	
+	mplogger=MpLogger()
+	mplogger.start()
+	
+	module_logger.debug("starting sub processes")
+	# running processes
+	module_logger.debug("joining sub processes")
+	
+	mplogger.stop()
+	
+ within individual process:
+ 
+ .. code-back:: python
+	
+	import logging
+	
+	module_logger=logging.getLogger(__name__)
+	
+	module_logger.debug("logging from sub process")
+   
    
