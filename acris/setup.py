@@ -35,7 +35,7 @@ NAME = PACKAGE
 '''
 DESCRIPTION is just a short description of your project. A sentence will suffice.
 '''
-DESCRIPTION = '''acris is a python library of programming patterns that w.'''
+DESCRIPTION = '''acris is a python library of programming patterns that we use, at acrisel, in Python projects and choose to contribute to Python community'''
 
 '''
 AUTHOR and AUTHOR_EMAIL are what they sound like: your name and email address. This 

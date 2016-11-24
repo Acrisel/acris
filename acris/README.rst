@@ -150,7 +150,7 @@ Usage as handler with logging is as defined in Python's logging how-to
 example
 -------
 
-.. code-back:: python
+.. code-block:: python
 	
 	import logging
 	
@@ -189,8 +189,8 @@ example
 -------
 
 In main process:
-	
-.. code-back:: python
+
+.. code-block:: python
 	
 	import logging
 	import time
@@ -207,8 +207,8 @@ In main process:
 	mplogger.stop()
 	
  within individual process:
- 
- .. code-back:: python
+
+.. code-block:: python
 	
 	import logging
 	
