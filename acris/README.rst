@@ -182,7 +182,6 @@ MpLogger
 ========
 
 Multiprocessor logger using QueueListener and QueueHandler
-
 It uses TimedSizedRotatingHandler as its logging handler
 	
 example
@@ -191,30 +190,29 @@ example
 In main process:
 
 .. code-block:: python
+    
+    import logging
+    import time
 	
-	import logging
-	import time
+    logger=logging.getLogger(__name__)
 	
-	logger=logging.getLogger(__name__)
+    mplogger=MpLogger(logging_level=logging.DEBUG)
+    mplogger.start()
 	
-	mplogger=MpLogger(logging_level=logging.DEBUG)
-	mplogger.start()
+    logger.debug("starting sub processes")
+    # running processes
+    module_logger.debug("joining sub processes")
 	
-	logger.debug("starting sub processes")
-	# running processes
-	module_logger.debug("joining sub processes")
+    mplogger.stop()
 	
-	mplogger.stop()
-	
- within individual process:
+ Within individual process:
 
 .. code-block:: python
 	
-	import logging
+    import logging
 	
-	logger=logging.getLogger(__name__)
-	
-	module_logger.debug("logging from sub process")
+    logger=logging.getLogger(__name__)
+    module_logger.debug("logging from sub process")
 	
    
    
