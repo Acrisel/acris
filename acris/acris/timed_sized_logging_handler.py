@@ -31,8 +31,8 @@ class TimedSizedRotatingHandler(TimedRotatingFileHandler, RotatingFileHandler):
     
     def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False, when='h', interval=1, utc=False, atTime=None):
         """ Combines RotatingFileHandler TimedRotatingFileHandler)  """
-        super(TimedRotatingFileHandler, self).__init__(self, filename, when, interval, backupCount, encoding, delay, utc, atTime)
-        super(RotatingFileHandler, self).__init__(self, filename, mode, maxBytes, backupCount, encoding, delay)
+        super(TimedRotatingFileHandler, self).__init__(filename, when, interval, backupCount, encoding, delay, utc, atTime)
+        super(RotatingFileHandler, self).__init__(filename, mode, maxBytes, backupCount, encoding, delay)
 
     def shouldRollover(self, record):
         """
