@@ -24,7 +24,6 @@ class MergedChainedDict(dict):
     def __init__(self, *args):
         super().__init__()
         args=list(args)
-        print(args)
         for arg in args[::-1]:
             self.update(arg)
             

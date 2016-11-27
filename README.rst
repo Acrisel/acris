@@ -128,8 +128,6 @@ example
     print('A', A())
     B=Sequence('B')
     print('B', B()) 
-    
-..
 
 example output
 --------------
@@ -142,8 +140,6 @@ example output
     A 2
     A 3
     B 1
-    
-..
 
 TimedSizedRotatingHandler
 =========================
@@ -181,8 +177,6 @@ example
 	logger.warn('warn message')
 	logger.error('error message')
 	logger.critical('critical message')	
-    
-..
 
 MpLogger
 ========
@@ -210,19 +204,38 @@ In main process:
     module_logger.debug("joining sub processes")
 	
     mplogger.stop()
-    
-..
 	
-Within individual process:
+ Within individual process:
 
 .. code-block:: python
 	
     import logging
-    
+	
     logger=logging.getLogger(__name__)
     module_logger.debug("logging from sub process")
-    
-..
 	
-   
+Data Types
+==========
+
+varies derivative of Python data types
+
+MergeChainedDict
+----------------
+
+Similar to ChainedDict, but merged the keys and is actually derivative of dict.
+
+.. code-block:: python
+
+    a={1:11, 2:22}
+    b={3:33, 4:44}
+    c={1:55, 4:66}
+    d=MergedChainedDict(c, b, a)
+    print(d) 
+
+Will output:
+
+.. code-block:: python
+
+	{1: 55, 2: 22, 3: 33, 4: 66}
+
    
