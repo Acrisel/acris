@@ -68,10 +68,11 @@ class MpLogger(object):
     logger_initialized=False
     queue_listener=None
     
-    def __init__(self, logdir=None, logging_level=logging.INFO, record_format=''):
+    def __init__(self, logdir=None, logging_level=logging.INFO, record_format='', logging_root=None):
         self.logdir=logdir
         self.logging_level=logging_level
         self.record_format=record_format
+        self.logging_root=logging_root
 
     def start(self, ):
         ''' starts logger for multiprocessing using queue.
@@ -91,7 +92,7 @@ class MpLogger(object):
             record_format="[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s ]"
     
         MpLogger.logger_initialized=True
-        logger = logging.getLogger()
+        logger = logging.getLogger(name=self.logging_root)
         logger.setLevel(self.logging_level)
             
         q=mp.Queue()
