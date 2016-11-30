@@ -31,5 +31,19 @@ class Sequence(Singleton):
         self.seq += 1
         return seq
     
+    def reset(self, initial=0):
+        self.seq=0
+    
+if __name__ == '__main__':
+    s1=Sequence('S1')
+    print('s1', s1())
+    s2=Sequence('S2')
+    print('s2', s2())
+    print('s2', s2())
+    print('s1', s1())
+    s1.reset()
+    print('s2', s2())
+    print('s1', s1())
+    
 
 

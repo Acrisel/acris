@@ -65,14 +65,16 @@ class MpQueueListener(QueueListener):
             self.handlers.remove(hdlr)
 
 class MpLogger(object):
-    logger_initialized=False
-    queue_listener=None
+    #logger_initialized=False
+    #queue_listener=None
     
     def __init__(self, logdir=None, logging_level=logging.INFO, record_format='', logging_root=None):
         self.logdir=logdir
         self.logging_level=logging_level
         self.record_format=record_format
         self.logging_root=logging_root
+        self.logger_initialized=False
+        self.queue_listener=None
 
     def start(self, ):
         ''' starts logger for multiprocessing using queue.
@@ -85,27 +87,30 @@ class MpLogger(object):
         #global logger_initialized
         #global queue_listener
         
-        if MpLogger.logger_initialized:
+        #if MpLogger.logger_initialized:
+        if self.logger_initialized:
             return
         
         if not self.record_format:
             record_format="[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s ]"
     
-        MpLogger.logger_initialized=True
+        #MpLogger.logger_initialized=True
+        self.logger_initialized=True
         logger = logging.getLogger(name=self.logging_root)
         logger.setLevel(self.logging_level)
             
         q=mp.Queue()
         queue_handler = QueueHandler(q)
         logger.addHandler(queue_handler)
-        MpLogger.queue_listener = MpQueueListener(q,)
+        #MpLogger.queue_listener = MpQueueListener(q,)
+        self.queue_listener = MpQueueListener(q,)
     
         handler = logging.StreamHandler()
         handler.setLevel(self.logging_level)
         formatter = logging.Formatter(record_format)
         handler.setFormatter(formatter)
-        #logger.addHandler(handler)
-        MpLogger.queue_listener.addHandler(handler)
+        #MpLogger.queue_listener.addHandler(handler)
+        self.queue_listener.addHandler(handler)
     
         if self.logdir:
             # create error file handler and set level to error
@@ -115,26 +120,31 @@ class MpLogger(object):
             formatter = logging.Formatter(record_format)
             handler.setFormatter(formatter)
             #logger.addHandler(handler)
-            MpLogger.queue_listener.addHandler(handler)
+            #MpLogger.queue_listener.addHandler(handler)
+            self.queue_listener.addHandler(handler)
          
             # create debug file handler and set level to debug
             handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "debug.log"), )
             handler.setLevel(logging.DEBUG)
             formatter = logging.Formatter(record_format)
             handler.setFormatter(formatter)
-            #logger.addHandler(handler)
-            MpLogger.queue_listener.addHandler(handler)
+            #MpLogger.queue_listener.addHandler(handler)
+            self.queue_listener.addHandler(handler)
             
-        MpLogger.queue_listener.start()
+        #MpLogger.queue_listener.start()
+        self.queue_listener.start()
         
     def stop(self,):
-        #global queue_listener
-        if MpLogger.queue_listener:
-            MpLogger.queue_listener.stop()
+        #if MpLogger.queue_listener:
+        #    MpLogger.queue_listener.stop()
+        if self.queue_listener:
+            self.queue_listener.stop()
             
     def quite(self,):
-        if MpLogger.queue_listener:
-            MpLogger.queue_listener.enqueue_sentinel()
+        #if MpLogger.queue_listener:
+        #    MpLogger.queue_listener.enqueue_sentinel()
+        if self.queue_listener:
+            self.queue_listener.enqueue_sentinel()
 
  
 if __name__ == '__main__':
