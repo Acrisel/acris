@@ -178,11 +178,15 @@ example
 	logger.error('error message')
 	logger.critical('critical message')	
 
-MpLogger
-========
+MpLogger and LevelBasedFormatter
+================================
 
 Multiprocessor logger using QueueListener and QueueHandler
 It uses TimedSizedRotatingHandler as its logging handler
+
+It also uses acris provided LevelBasedFormatter which facilitate message formats
+based on record level.  LevelBasedFormatter inherent from logging.Formatter and
+can be used as such in customized logging handlers. 
 	
 example
 -------
@@ -196,7 +200,12 @@ In main process:
 	
     logger=logging.getLogger(__name__)
 	
-    mplogger=MpLogger(logging_level=logging.DEBUG)
+    level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s.%(lineno)d ]",
+                    'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
+                    }
+
+	
+    mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
     mplogger.start()
 	
     logger.debug("starting sub processes")
@@ -213,6 +222,16 @@ In main process:
 	
     logger=logging.getLogger(__name__)
     module_logger.debug("logging from sub process")
+    
+Example output
+--------------
+
+.. code-block:: python
+
+	[ 2016-12-06 13:39:56,196 ][ DEBUG ][ starting sub processes ][ mptest.<module>.178 ]
+	[ 2016-12-06 13:39:56,630 ][ INFO ][ proc [2663]: 0/1 - sleep 0.42sec ]
+	[ 2016-12-06 13:39:56,802 ][ INFO ][ proc [2664]: 0/1 - sleep  0.6sec ]
+	[ 2016-12-06 13:39:56,805 ][ DEBUG ][ sub processes completed ][ mptest.<module>.189 ]
 	
 Data Types
 ==========

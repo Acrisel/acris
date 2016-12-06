@@ -23,6 +23,7 @@ import logging
 from logging.handlers import QueueListener, QueueHandler
 import os
 import multiprocessing as mp
+from copy import copy
 from acris.timed_sized_logging_handler import TimedSizedRotatingHandler
 
 class MpQueueListener(QueueListener):
@@ -63,15 +64,37 @@ class MpQueueListener(QueueListener):
         if hdlr in self.handlers:
             hdlr.close()
             self.handlers.remove(hdlr)
+            
+class LevelBasedFormatter(logging.Formatter):
+    
+    defaults={
+        logging.DEBUG : "DEBUG: %(module)s: %(lineno)d: %(msg)s",
+        'default' : "%(levelno)s: %(msg)s",
+        }
+ 
+    def __init__(self, level_formats={}):
+        defaults=LevelBasedFormatter.defaults
+        if level_formats:
+            defaults=copy(LevelBasedFormatter.defaults)
+            defaults.update(level_formats)
+            
+        self.defaults=dict([(level, logging.Formatter(fmt) ) for level, fmt in defaults.items()])
+            
+        self.default_format=self.defaults['default']  
+        logging.Formatter.__init__(self, self.default_format)
+
+
+    def format(self, record):
+        formatter=self.defaults.get(record.levelno, self.default_format)
+        result = formatter.format(record)
+        return result
 
 class MpLogger(object):
-    #logger_initialized=False
-    #queue_listener=None
     
-    def __init__(self, logdir=None, logging_level=logging.INFO, record_format='', logging_root=None):
+    def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, logging_root=None):
         self.logdir=logdir
         self.logging_level=logging_level
-        self.record_format=record_format
+        self.record_formatter=LevelBasedFormatter(level_formats)
         self.logging_root=logging_root
         self.logger_initialized=False
         self.queue_listener=None
@@ -84,17 +107,11 @@ class MpLogger(object):
         logger_format
         '''
         # create console handler and set level to info
-        #global logger_initialized
-        #global queue_listener
         
         #if MpLogger.logger_initialized:
         if self.logger_initialized:
             return
         
-        if not self.record_format:
-            record_format="[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s ]"
-    
-        #MpLogger.logger_initialized=True
         self.logger_initialized=True
         logger = logging.getLogger(name=self.logging_root)
         logger.setLevel(self.logging_level)
@@ -102,47 +119,39 @@ class MpLogger(object):
         q=mp.Queue()
         queue_handler = QueueHandler(q)
         logger.addHandler(queue_handler)
-        #MpLogger.queue_listener = MpQueueListener(q,)
+        
         self.queue_listener = MpQueueListener(q,)
     
         handler = logging.StreamHandler()
         handler.setLevel(self.logging_level)
-        formatter = logging.Formatter(record_format)
+        formatter = self.record_formatter 
         handler.setFormatter(formatter)
-        #MpLogger.queue_listener.addHandler(handler)
+
         self.queue_listener.addHandler(handler)
     
         if self.logdir:
             # create error file handler and set level to error
             handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "error.log"), encoding=None, delay="true")
             handler.setLevel(logging.ERROR)
-            #formatter = logging.Formatter("%(levelname)s - %(message)s")
-            formatter = logging.Formatter(record_format)
+            formatter = self.record_formatter 
             handler.setFormatter(formatter)
-            #logger.addHandler(handler)
-            #MpLogger.queue_listener.addHandler(handler)
             self.queue_listener.addHandler(handler)
          
             # create debug file handler and set level to debug
             handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "debug.log"), )
             handler.setLevel(logging.DEBUG)
-            formatter = logging.Formatter(record_format)
+            formatter = self.record_formatter 
             handler.setFormatter(formatter)
-            #MpLogger.queue_listener.addHandler(handler)
+
             self.queue_listener.addHandler(handler)
             
-        #MpLogger.queue_listener.start()
         self.queue_listener.start()
         
     def stop(self,):
-        #if MpLogger.queue_listener:
-        #    MpLogger.queue_listener.stop()
         if self.queue_listener:
             self.queue_listener.stop()
             
     def quite(self,):
-        #if MpLogger.queue_listener:
-        #    MpLogger.queue_listener.enqueue_sentinel()
         if self.queue_listener:
             self.queue_listener.enqueue_sentinel()
 
@@ -159,12 +168,16 @@ if __name__ == '__main__':
             time.sleep(sleep_time)
             logger.info("proc [%s]: %s/%s - sleep %4.4ssec" % (os.getpid(), i, limit, sleep_time))
     
-    mplogger=MpLogger(logging_level=logging.DEBUG)
+    level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s.%(lineno)d ]",
+                    'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
+                    }
+        
+    mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
     mplogger.start()
     
     logger.debug("starting sub processes")
     procs=list()
-    for limit in [5, 5]:
+    for limit in [1, 1]:
         proc=mp.Process(target=subproc, args=(limit, ))
         procs.append(proc)
         proc.start()
