@@ -118,6 +118,15 @@ class AsyncResult(object):
         else:
             raise self.__error
     result=property(__getResult)
+
+
+class RetriveAsycValue(object):
+    def __init__(self, name):
+        self.name=name
+        
+    def __call__(self, retval):
+        print(self.name, ':', retval)  
+    
     
 def threaded(method): 
     @wraps(method)
@@ -134,3 +143,8 @@ def threaded(method):
         Thread(target = _method).start() 
         return async_result 
     return wrapper
+
+
+    
+    
+    

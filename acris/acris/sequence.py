@@ -22,28 +22,25 @@
 
 
 from acris import Singleton
+from acris.decorated_class import decorated_class, traced_method
+
+tracer=traced_method(print)
 
 class Sequence(Singleton):
-    seq=0
+    __seq=0
     
-    def __call__(self, name=''):
-        seq=self.seq
-        self.seq += 1
+    def __init__(self, *args, **kwargs):
+        pass
+    
+    #@tracer
+    def __call__(self,) :
+        seq=self.__seq
+        self.__seq += 1
         return seq
     
     def reset(self, initial=0):
-        self.seq=0
+        self.__seq=initial
     
-if __name__ == '__main__':
-    s1=Sequence('S1')
-    print('s1', s1())
-    s2=Sequence('S2')
-    print('s2', s2())
-    print('s2', s2())
-    print('s1', s1())
-    s1.reset()
-    print('s2', s2())
-    print('s1', s1())
     
 
 

@@ -21,7 +21,7 @@
 ##############################################################################
 
 
-from acris import threaded
+from acris import threaded, RetriveAsycValue
 from time import sleep
 
 class ThreadedExample(object):
@@ -36,17 +36,12 @@ class ThreadedExample(object):
         print("%s: %s" % (id_, s))  
         return s
         
-class RetVal(object):
-    def __init__(self, name):
-        self.name=name
-        
-    def __call__(self, retval):
-        print(self.name, ':', retval)  
-            
 if __name__ == '__main__':
+    print("starting workers")
     te1=ThreadedExample().proc(1, 3, 1)
     te2=ThreadedExample().proc(2, 3, 5)
     
-    te1.addCallback(RetVal('te1'))
-    te2.addCallback(RetVal('te2'))
+    print("collecting results")
+    te1.addCallback(RetriveAsycValue('te1'))
+    te2.addCallback(RetriveAsycValue('te2'))
     

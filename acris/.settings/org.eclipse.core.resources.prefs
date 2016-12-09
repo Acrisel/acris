@@ -1,6 +1,7 @@
 eclipse.preferences.version=1
 encoding//acris/data_types.py=utf-8
 encoding//acris/mplogger.py=utf-8
+encoding//acris/resource_pool.py=utf-8
 encoding//acris/sequence.py=utf-8
 encoding//acris/singleton.py=utf-8
 encoding//acris/threaded.py=utf-8
