@@ -312,3 +312,50 @@ Example Output
         w21 returning [Resource(name:MyResource)]
         w22 doing work ([Resource(name:MyResource)])
         w22 returning [Resource(name:MyResource)]
+        
+Mediator
+========
+    
+    Class interface to generator allowing query of has_next()
+    
+Example 
+-------
+
+    .. code-block:: python
+
+        from acris import Mediator
+
+        def yrange(n):
+            i = 0
+            while i < n:
+                yield i
+                i += 1
+
+        n=10
+        m=Mediator(yrange(n))
+        for i in range(n):
+            print(i, m.has_next(3), next(m))
+        print(i, m.has_next(), next(m))
+
+Example Output
+--------------
+
+    .. code-block:: python
+
+        0 True 0
+        1 True 1
+        2 True 2
+        3 True 3
+        4 True 4
+        5 True 5
+        6 True 6
+        7 True 7
+        8 False 8
+        9 False 9
+        Traceback (most recent call last):
+          File "/private/var/acrisel/sand/acris/acris/acris/example/mediator.py", line 19, in <module>
+            print(i, m.has_next(), next(m))
+          File "/private/var/acrisel/sand/acris/acris/acris/acris/mediator.py", line 38, in __next__
+            value=next(self.generator)
+        StopIteration       
+        

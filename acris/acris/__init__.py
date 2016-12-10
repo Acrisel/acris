@@ -1,4 +1,4 @@
-__version__ = "1.1.7"
+__version__ = "1.1.8"
 
 from .threaded import threaded, RetriveAsycValue
 from .singleton import Singleton
@@ -8,3 +8,4 @@ from .mplogger import MpLogger, LevelBasedFormatter
 from .data_types import MergedChainedDict
 from .resource_pool import ResourcePool, Resource
 from .synchronized import Synchronization, SynchronizeAll, synchronized
+from .mediator import Mediator
