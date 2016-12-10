@@ -33,7 +33,8 @@ def dont_decorate(f):
 
 def traced_method(print_func):
     caller=inspect.stack()[1] #filename, lineno
-    caller="%s(%s)" % (caller.filename, caller.lineno)
+    #caller="%s(%s)" % (caller.filename, caller.lineno)
+    caller="%s(%s)" % (caller[1], caller[2])
     def print_method_name(name, f=None):
         if f==None :
             text_id='%s' % (name.__name__)

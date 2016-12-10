@@ -29,10 +29,7 @@ from collections import OrderedDict
 #from acris.synchronized.sav.1 import SynchronizeAll, dont_synchronize, Synchronization, synchronized
 from acris.decorated_class import decorated_class, traced_method
 
-tracer=traced_method(print)
-
-class MethodTracer(metaclass=decorated_class(tracer)):
-    pass
+#tracer=traced_method(print)
 
 
 resource_id=Sequence('ResourcePool_Resource')

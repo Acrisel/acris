@@ -24,7 +24,7 @@
 from acris import Singleton
 from acris.decorated_class import decorated_class, traced_method
 
-tracer=traced_method(print)
+#tracer=traced_method(print)
 
 class Sequence(Singleton):
     __seq=0

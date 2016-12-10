@@ -3,9 +3,9 @@ Created on Dec 9, 2016
 
 @author: arnon
 '''
-from acris.class_decorator import trace_method
+from acris.decorated_class import traced_method
 
-traced=trace_method(print)
+traced=traced_method(print)
 
 class Oper(object):
     def __init__(self, value):
