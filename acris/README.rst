@@ -264,54 +264,122 @@ ResourcePool
      Resource pool provides program with interface to manager resource pools.  This is used as means to 
      funnel processing.
      
-Example
--------
+Sync Example
+------------
 
     .. code-block:: python
 
         import time
         from acris import resource_pool as rp
         from acris import threaded
+        import queue
+        from datetime import datetime
 
-        class MyResource(rp.Resource):
-            pass
+        class MyResource1(rp.Resource): pass
 
-        rp1=rp.ResourcePool('RP1', resource_cls=MyResource, policy={'resource_limit': 2, }).load()                   
-        rp2=rp.ResourcePool('RP2', resource_cls=MyResource, policy={'resource_limit': 1, }).load()
+        class MyResource2(rp.Resource): pass
+
+        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
 
         @threaded
-        def worker(name, rp):
-            print('%s getting resource' % name)
+        def worker_awaiting(name, rp):
+            print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
             r=rp.get()
-            print('%s doing work (%s)' % (name, repr(r)))
+            print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
             time.sleep(4)
-            print('%s returning %s' % (name, repr(r)))
+            print('[ %s ] %s returning %s' % (str(datetime.now()), name, repr(r)))
             rp.put(*r)
+    
 
-        print("Starting workers")
-        r1=worker('w11', rp1)    
-        r2=worker('w21', rp2)    
-        r3=worker('w22', rp2)    
-        r4=worker('w12', rp1) 
-        
-Example Output
---------------
+        r1=worker_awaiting('>>> w11-direct', rp1)    
+        r2=worker_awaiting('>>> w21-direct', rp2)    
+        r3=worker_awaiting('>>> w22-direct', rp2)    
+        r4=worker_awaiting('>>> w12-direct', rp1)   
+              
+Sync Example Output
+-------------------
 
     .. code-block:: python
 
-        Starting workers
-        w11 getting resource
-        w11 doing work ([Resource(name:MyResource)])
-        w21 getting resource
-        w21 doing work ([Resource(name:MyResource)])
-        w22 getting resource
-        w12 getting resource
-        w12 doing work ([Resource(name:MyResource)])
-        w12 returning [Resource(name:MyResource)]
-        w11 returning [Resource(name:MyResource)]
-        w21 returning [Resource(name:MyResource)]
-        w22 doing work ([Resource(name:MyResource)])
-        w22 returning [Resource(name:MyResource)]
+        [ 2016-12-11 13:06:14.659569 ] >>> w11-direct getting resource
+        [ 2016-12-11 13:06:14.659640 ] >>> w11-direct doing work ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:06:14.659801 ] >>> w21-direct getting resource
+        [ 2016-12-11 13:06:14.659834 ] >>> w21-direct doing work ([Resource(name:MyResource2)])
+        [ 2016-12-11 13:06:14.659973 ] >>> w22-direct getting resource
+        [ 2016-12-11 13:06:14.660190 ] >>> w12-direct getting resource
+        [ 2016-12-11 13:06:14.660260 ] >>> w12-direct doing work ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:06:18.662362 ] >>> w11-direct returning [Resource(name:MyResource1)]
+        [ 2016-12-11 13:06:18.662653 ] >>> w21-direct returning [Resource(name:MyResource2)]
+        [ 2016-12-11 13:06:18.662826 ] >>> w12-direct returning [Resource(name:MyResource1)]
+        [ 2016-12-11 13:06:18.662998 ] >>> w22-direct doing work ([Resource(name:MyResource2)])
+        [ 2016-12-11 13:06:22.667149 ] >>> w22-direct returning [Resource(name:MyResource2)]
+        
+Async Example
+-------------
+
+    .. code-block:: python
+
+        import time
+        from acris import resource_pool as rp
+        from acris import threaded
+        import queue
+        from datetime import datetime
+
+        class MyResource1(rp.Resource): pass
+    
+        class MyResource2(rp.Resource): pass
+
+        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+   
+        class Callback(object):
+            def __init__(self, notify_queue):
+                self.q=notify_queue
+            def __call__(self,resources=None):
+                self.q.put(resources)
+
+        @threaded
+        def worker_callback(name, rp):
+            print('[ %s ] %s getting resource' % (str(datetime.now()), name))
+            notify_queue=queue.Queue()
+            r=rp.get(callback=Callback(notify_queue))
+
+            if not r:
+                print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
+                print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
+                ticket=notify_queue.get()
+                r=rp.get(ticket=ticket)
+    
+            print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
+            time.sleep(2)
+            print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(r)))
+            rp.put(*r)
+
+        r1=worker_callback('>>> w11-callback', rp1)    
+        r2=worker_callback('>>> w21-callback', rp2)    
+        r3=worker_callback('>>> w22-callback', rp2)    
+        r4=worker_callback('>>> w12-callback', rp1)  
+                     
+Async Example Output
+--------------------
+
+    .. code-block:: python
+
+        [ 2016-12-11 13:08:24.410447 ] >>> w11-callback getting resource
+        [ 2016-12-11 13:08:24.410539 ] >>> w11-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:08:24.410682 ] >>> w21-callback getting resource
+        [ 2016-12-11 13:08:24.410762 ] >>> w21-callback doing work ([Resource(name:MyResource2)])
+        [ 2016-12-11 13:08:24.410945 ] >>> w22-callback getting resource
+        [ 2016-12-11 13:08:24.411227 ] >>> w22-callback doing work before resource available
+        [ 2016-12-11 13:08:24.411273 ] >>> w12-callback getting resource
+        [ 2016-12-11 13:08:24.411334 ] >>> w22-callback waiting for resources
+        [ 2016-12-11 13:08:24.411452 ] >>> w12-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:08:26.411901 ] >>> w11-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:08:26.412200 ] >>> w21-callback returning ([Resource(name:MyResource2)])
+        [ 2016-12-11 13:08:26.412505 ] >>> w22-callback doing work ([Resource(name:MyResource2)])
+        [ 2016-12-11 13:08:26.416130 ] >>> w12-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-11 13:08:28.416001 ] >>> w22-callback returning ([Resource(name:MyResource2)])
         
 Mediator
 ========

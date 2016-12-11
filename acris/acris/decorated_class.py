@@ -31,10 +31,11 @@ def dont_decorate(f):
     f.decorate = False
     return f
 
-def traced_method(print_func):
+def traced_method(print_func=None, print_args=False):
     caller=inspect.stack()[1] #filename, lineno
     #caller="%s(%s)" % (caller.filename, caller.lineno)
     caller="%s(%s)" % (caller[1], caller[2])
+    
     def print_method_name(name, f=None):
         if f==None :
             text_id='%s' % (name.__name__)
@@ -46,10 +47,15 @@ def traced_method(print_func):
         def wrapper(*args, **kwargs):
             
             start=datetime.datetime.now()
-            print_func('[ %s ][ %s ][ entering] [ %s ]' % (str(start), text_id, caller))
+            func_args=''
+            if print_args:
+                func_args="[ args: %s ][ kwargs: %s ]" % (args, kwargs)
+            if print_func:
+                print_func('[ %s ][ %s ][ entering]%s[ %s ]' % (str(start), text_id, func_args,caller))
             result=method(*args, **kwargs)
             finish=datetime.datetime.now()
-            print_func('[ %s ][ %s ][ exiting ] [ time span: %s][ %s ]' % (str(finish), text_id, str(finish-start), caller))
+            if print_func:
+                print_func('[ %s ][ %s ][ exiting ] [ time span: %s][ %s ]' % (str(finish), text_id, str(finish-start), caller))
             return result
         return wrapper
     return print_method_name

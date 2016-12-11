@@ -20,26 +20,39 @@
 #
 ##############################################################################
 
-from acris.decorated_class import traced_method
+import time
+import random
+import logging
+from acris import MpLogger
+import os
+import multiprocessing as mp
 
-traced=traced_method(print)
+logger=logging.getLogger(__name__)
 
-class Oper(object):
-    def __init__(self, value):
-        self.value=value
-        
-    def __repr__(self):
-        return str(self.value)
-        
-    @traced
-    def mul(self, value):
-        self.value*=value 
-        return self   
+def subproc(limit=1):
+    for i in range(limit):
+        sleep_time=3/random.randint(1,10)
+        time.sleep(sleep_time)
+        logger.info("proc [%s]: %s/%s - sleep %4.4ssec" % (os.getpid(), i, limit, sleep_time))
+
+level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s(%(lineno)d) ]",
+                'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
+                }
     
-    @traced
-    def add(self, value):
-        self.value+=value
-        return self
+mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
+mplogger.start()
+
+logger.debug("starting sub processes")
+procs=list()
+for limit in [1, 1]:
+    proc=mp.Process(target=subproc, args=(limit, ))
+    procs.append(proc)
+    proc.start()
     
-o=Oper(3)
-print(o.add(2).mul(5).add(7).mul(8))
+for proc in procs:
+    if proc:
+        proc.join()
+    
+logger.debug("sub processes completed")
+
+mplogger.stop()

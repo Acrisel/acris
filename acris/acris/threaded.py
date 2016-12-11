@@ -31,15 +31,6 @@ About
 :comment: based on http://code.activestate.com/recipes/576684-simple-threading-decorator/
 
 
-      
-**History:**
--------------------
-
-:Author: <who made the changes>
-:Modification:
-   - Describe here the changes that were made in bullet form.  Use
-     a new dash character '-' to create a new entry!
-:Date: <enter the date the changes were made>
 
     
 """

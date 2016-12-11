@@ -27,26 +27,36 @@ import queue
 from datetime import datetime
 
 class MyResource1(rp.Resource): pass
-
+    
 class MyResource2(rp.Resource): pass
 
 rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
 rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+   
+class Callback(object):
+    def __init__(self, notify_queue):
+        self.q=notify_queue
+    def __call__(self,resources=None):
+        self.q.put(resources)
 
 @threaded
-def worker_awaiting(name, rp):
-    print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
-    r=rp.get()
-    print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
-    time.sleep(4)
-    print('[ %s ] %s returning %s' % (str(datetime.now()), name, repr(r)))
-    rp.put(*r)
+def worker_callback(name, rp):
+    print('[ %s ] %s getting resource' % (str(datetime.now()), name))
+    notify_queue=queue.Queue()
+    r=rp.get(callback=Callback(notify_queue))
+
+    if not r:
+        print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
+        print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
+        ticket=notify_queue.get()
+        r=rp.get(ticket=ticket)
     
+    print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
+    time.sleep(2)
+    print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(r)))
+    rp.put(*r)
 
-r1=worker_awaiting('>>> w11-direct', rp1)    
-r2=worker_awaiting('>>> w21-direct', rp2)    
-r3=worker_awaiting('>>> w22-direct', rp2)    
-r4=worker_awaiting('>>> w12-direct', rp1) 
-
-
-
+r1=worker_callback('>>> w11-callback', rp1)    
+r2=worker_callback('>>> w21-callback', rp2)    
+r3=worker_callback('>>> w22-callback', rp2)    
+r4=worker_callback('>>> w12-callback', rp1) 

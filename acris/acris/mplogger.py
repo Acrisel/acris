@@ -19,6 +19,7 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
+
 import logging
 from logging.handlers import QueueListener, QueueHandler
 import os
@@ -68,8 +69,8 @@ class MpQueueListener(QueueListener):
 class LevelBasedFormatter(logging.Formatter):
     
     defaults={
-        logging.DEBUG : "DEBUG: %(module)s: %(lineno)d: %(msg)s",
-        'default' : "%(levelno)s: %(msg)s",
+        logging.DEBUG : "%(asctime)-15s: %(levelname)-7s: %(message)s: %(module)s.%(funcName)s(%(lineno)d)",
+        'default' : "%(asctime)-15s: %(levelname)-7s: %(message)s",
         }
  
     def __init__(self, level_formats={}):
@@ -83,17 +84,24 @@ class LevelBasedFormatter(logging.Formatter):
         self.default_format=self.defaults['default']  
         logging.Formatter.__init__(self, self.default_format)
 
-
     def format(self, record):
         formatter=self.defaults.get(record.levelno, self.default_format)
         result = formatter.format(record)
         return result
+    
+def create_stream_handler(logging_level=logging.INFO, level_formats={}):
+    handler = logging.StreamHandler()
+    handler.setLevel(logging_level)
+    formatter = LevelBasedFormatter(level_formats) 
+    handler.setFormatter(formatter)
+    return handler
 
 class MpLogger(object):
     
     def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, logging_root=None):
         self.logdir=logdir
         self.logging_level=logging_level
+        self.level_formats=level_formats
         self.record_formatter=LevelBasedFormatter(level_formats)
         self.logging_root=logging_root
         self.logger_initialized=False
@@ -121,11 +129,12 @@ class MpLogger(object):
         logger.addHandler(queue_handler)
         
         self.queue_listener = MpQueueListener(q,)
-    
-        handler = logging.StreamHandler()
-        handler.setLevel(self.logging_level)
-        formatter = self.record_formatter 
-        handler.setFormatter(formatter)
+        
+        handler=create_stream_handler(self.logging_level, self.level_formats)
+        #handler = logging.StreamHandler()
+        #handler.setLevel(self.logging_level)
+        #formatter = self.record_formatter 
+        #handler.setFormatter(formatter)
 
         self.queue_listener.addHandler(handler)
     
@@ -155,37 +164,3 @@ class MpLogger(object):
         if self.queue_listener:
             self.queue_listener.enqueue_sentinel()
 
- 
-if __name__ == '__main__':
-    import time
-    import random
-    
-    logger=logging.getLogger(__name__)
-    
-    def subproc(limit=1):
-        for i in range(limit):
-            sleep_time=3/random.randint(1,10)
-            time.sleep(sleep_time)
-            logger.info("proc [%s]: %s/%s - sleep %4.4ssec" % (os.getpid(), i, limit, sleep_time))
-    
-    level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s.%(lineno)d ]",
-                    'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
-                    }
-        
-    mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
-    mplogger.start()
-    
-    logger.debug("starting sub processes")
-    procs=list()
-    for limit in [1, 1]:
-        proc=mp.Process(target=subproc, args=(limit, ))
-        procs.append(proc)
-        proc.start()
-        
-    for proc in procs:
-        if proc:
-            proc.join()
-        
-    logger.debug("sub processes completed")
-
-    mplogger.stop()
