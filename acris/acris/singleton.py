@@ -49,6 +49,31 @@ class SingletonType(type):
 class Singleton(metaclass=SingletonType):
     pass
 
+class NamedSingletonType(type):
+    '''
+        Thread friendly Singleton construct
+    '''
+    __locker=Lock() 
+    #__instance = None
+    __instance={}
+    
+    #def __init__(self, name, bases, attrs):
+    #    super(SingletonType, self).__init__(name, bases, attrs)
+      
+    def __call__( self, name, *args, **kwargs):   
+        NamedSingletonType.__locker.acquire()
+        try:
+            instance=self.__instance[name]
+        except KeyError:
+            instance=super(NamedSingletonType, self).__call__(*args, name=name, **kwargs)
+            self.__instance[name]=instance
+        NamedSingletonType.__locker.release()
+        return instance
+    
+        
+class NamedSingleton(metaclass=NamedSingletonType):
+    pass
+
 if __name__ == '__main__':
 
     class SingTest(Singleton):
@@ -78,5 +103,51 @@ if __name__ == '__main__':
     print(s2.get())
     
     print(s1.get())
-            
+ 
+    class NamedSingTest(NamedSingleton):
+        __data=None
+        
+        def __init__(self, mydata=None, name='', *args, **kwargs):
+            print('init', mydata, name, args, kwargs)
+            self.name=name
+            self.__data = mydata
+        
+        def load(self, mydata=None):
+            if not self.__data:
+                self.__data = mydata
+            return self
+                
+        def get(self):
+            return self.__data
+        
+    
+    s1=NamedSingTest('S1', 55, a=23).load(1)
+    print('named', s1.name, s1.get())
+    
+    s2=NamedSingTest('S2')
+    print('named', s2.name, s2.get())
+    s2.load(2)
+    print('named', s2.name, s2.get())
+    s2.load(3)
+    print('named', s2.name, s2.get())
+    
+    print('named', s1.name, s1.get())
+
+    class Sequence(NamedSingleton):
+        step_id=0
+        
+        def __init__(self, name=''):
+            self.name=name
+
+        def __call__(self,):
+            step_id=self.step_id
+            self.step_id += 1
+            return step_id  
+
+    A=Sequence('A')
+    print(A.name, A())
+    print(A.name, A())
+    B=Sequence('B')
+    print(B.name, B()) 
+           
     

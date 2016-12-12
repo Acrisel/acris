@@ -66,13 +66,13 @@ example output
         2: 18
         te2 : 18
 
-Singleton
-=========
+Singleton and NamedSingleton
+============================
 
     meta class that creates singleton footprint of classes inheriting from it.
 
-example
--------
+Singleton example
+-----------------
 
     .. code-block:: python
 
@@ -104,6 +104,43 @@ example output
         A 0
         A 1
         B 2
+    
+NamedSingleton example
+-----------------
+
+    .. code-block:: python
+
+        from acris import Singleton
+
+        class Sequence(NamedSingleton):
+            step_id=0
+            
+            def __init__(self, name=''):
+                self.name=name
+    
+            def __call__(self,):
+                step_id=self.step_id
+                self.step_id += 1
+                return step_id  
+
+example output
+--------------
+
+    .. code-block:: python
+ 
+        A=Sequence('A')
+        print(A.name, A())
+        print(A.name, A())
+        B=Sequence('B')
+        print(B.name, B()) 
+
+    will produce:
+
+    .. code-block:: python
+
+        A 0
+        A 1
+        B 0
     
 Sequence
 ========
