@@ -36,7 +36,7 @@ rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1
 class Callback(object):
     def __init__(self, notify_queue):
         self.q=notify_queue
-    def __call__(self, name, ticket=None):
+    def __call__(self, name='', ticket=None):
         self.q.put(ticket)
 
 @threaded
