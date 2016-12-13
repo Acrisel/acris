@@ -48,20 +48,20 @@ def worker_callback(name, rps):
     notify_queue=queue.Queue()
     callback=Callback(notify_queue, name=name)
     #print(type(callback))
-    r=rp.Requestor(request=rps, callback=callback)
+    requestor=rp.Requestor(request=rps, callback=callback)
 
-    if r.is_reserved():
-        resources=r.get()
+    if requestor.is_reserved():
+        resources=requestor.get()
     else:
         print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
         print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
         notify_queue.get()
-        resources=r.get()
+        resources=requestor.get()
 
     print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
     time.sleep(2)
     print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
-    r.put(*resources)
+    requestor.put(*resources)
 
 r1=worker_callback('>>> w11-callback', [(rp1,1),])    
 r2=worker_callback('>>> w21-callback', [(rp1,1),(rp2,1)])    
