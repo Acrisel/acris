@@ -39,8 +39,8 @@ class Callback(object):
         self.name=name
     #def get_name(self):
     #    return self.name
-    def __call__(self,resources=None):
-        self.q.put(resources)
+    def __call__(self,received=False):
+        self.q.put(received)
 
 @threaded
 def worker_callback(name, rps):

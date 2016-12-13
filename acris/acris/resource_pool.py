@@ -547,7 +547,7 @@ class Requestor(object):
                  
     def __notify_collected(self):
         if self.__is_reserved() and self.__callback:
-            self.__callback("True")
+            self.__callback(True)
                   
     def get(self,):
         result=None
@@ -588,7 +588,7 @@ class Requestor(object):
         
     def __del__(self):
         # need to make sure all resources are returned
-        for rp_name, resources in self.__resources.item():
+        for rp_name, resources in self.__resources.items():
             rp, _ = self.__request[rp_name]
             for resource in resources:
                 rp.put(resource)

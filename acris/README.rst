@@ -106,7 +106,7 @@ example output
         B 2
     
 NamedSingleton example
------------------
+----------------------
 
     .. code-block:: python
 
@@ -375,7 +375,7 @@ Async Example
         class Callback(object):
             def __init__(self, notify_queue):
                 self.q=notify_queue
-            def __call__(self,resources=None):
+            def __call__(self, resources=None):
                 self.q.put(resources)
 
         @threaded
@@ -441,8 +441,8 @@ Requestor Example
         class Callback(object):
             def __init__(self, notify_queue):
                 self.q=notify_queue
-            def __call__(self, resources=None):
-                self.q.put(resources)
+            def __call__(self, ready=False):
+                self.q.put(ready)
 
         @threaded
         def worker_callback(name, rps):
