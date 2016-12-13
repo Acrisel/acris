@@ -6,6 +6,6 @@ from .sequence import Sequence
 from .timed_sized_logging_handler import TimedSizedRotatingHandler
 from .mplogger import MpLogger, LevelBasedFormatter, create_stream_handler
 from .data_types import MergedChainedDict
-from .resource_pool import ResourcePool, Resource, MultiPoolRequestor
+from .resource_pool import ResourcePool, Resource
 from .synchronized import Synchronization, SynchronizeAll, synchronized
 from .mediator import Mediator

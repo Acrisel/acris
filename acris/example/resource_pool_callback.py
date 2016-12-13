@@ -25,6 +25,9 @@ from acris import resource_pool as rp
 from acris import threaded
 import queue
 from datetime import datetime
+from acris.decorated_class import traced_method
+
+traced=traced_method(print, True)
 
 class MyResource1(rp.Resource): pass
     
@@ -36,14 +39,16 @@ rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1
 class Callback(object):
     def __init__(self, notify_queue):
         self.q=notify_queue
-    def __call__(self, name='', ticket=None):
+    @traced
+    def __call__(self, ticket=None):
         self.q.put(ticket)
 
 @threaded
 def worker_callback(name, rp):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()
-    r=rp.get(callback=Callback(notify_queue))
+    callback=Callback(notify_queue)
+    r=rp.get(callback=callback)
 
     if not r:
         print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))

@@ -299,7 +299,9 @@ ResourcePool
 ============
 
      Resource pool provides program with interface to manager resource pools.  This is used as means to 
-     funnel processing.
+     funnel processing.  
+     
+     ResourcePoolRequestor object can be used to request resource set resides in multiple pools.
      
 Sync Example
 ------------
@@ -417,6 +419,78 @@ Async Example Output
         [ 2016-12-11 13:08:26.412505 ] >>> w22-callback doing work ([Resource(name:MyResource2)])
         [ 2016-12-11 13:08:26.416130 ] >>> w12-callback returning ([Resource(name:MyResource1)])
         [ 2016-12-11 13:08:28.416001 ] >>> w22-callback returning ([Resource(name:MyResource2)])
+        
+Requestor Example
+-------------
+
+    .. code-block:: python
+
+        import time
+        from acris import resource_pool as rp
+        from acris import threaded
+        import queue
+        from datetime import datetime
+
+        class MyResource1(rp.Resource): pass
+    
+        class MyResource2(rp.Resource): pass
+
+        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 2, }).load()
+   
+        class Callback(object):
+            def __init__(self, notify_queue, name=''):
+                self.q=notify_queue
+                self.name=name
+            def __call__(self,resources=None):
+                self.q.put(resources)
+
+        @threaded
+        def worker_callback(name, rps):
+            print('[ %s ] %s getting resource' % (str(datetime.now()), name))
+            notify_queue=queue.Queue()
+            callback=Callback(notify_queue, name=name)
+            r=rp.Requestor(request=rps, callback=callback)
+
+            if r.is_reserved():
+                resources=r.get()
+            else:
+                print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
+                print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
+                notify_queue.get()
+                resources=r.get()
+
+            print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
+            time.sleep(2)
+            print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
+            r.put(*resources)
+
+        r1=worker_callback('>>> w11-callback', [(rp1,1),])    
+        r2=worker_callback('>>> w21-callback', [(rp1,1),(rp2,1)])    
+        r3=worker_callback('>>> w22-callback', [(rp1,1),(rp2,1)])    
+        r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
+                     
+Requestor Example Output
+--------------------
+
+    .. code-block:: python
+
+        [ 2016-12-13 06:27:54.924629 ] >>> w11-callback getting resource
+        [ 2016-12-13 06:27:54.925094 ] >>> w21-callback getting resource
+        [ 2016-12-13 06:27:54.925453 ] >>> w22-callback getting resource
+        [ 2016-12-13 06:27:54.926188 ] >>> w12-callback getting resource
+        [ 2016-12-13 06:27:54.932922 ] >>> w11-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:54.933709 ] >>> w12-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:54.938425 ] >>> w22-callback doing work before resource available
+        [ 2016-12-13 06:27:54.938548 ] >>> w22-callback waiting for resources
+        [ 2016-12-13 06:27:54.939256 ] >>> w21-callback doing work before resource available
+        [ 2016-12-13 06:27:54.939267 ] >>> w21-callback waiting for resources
+        [ 2016-12-13 06:27:56.936881 ] >>> w11-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:56.937543 ] >>> w12-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:56.947615 ] >>> w22-callback doing work ([Resource(name:MyResource2), Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:56.948587 ] >>> w21-callback doing work ([Resource(name:MyResource2), Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:58.949812 ] >>> w22-callback returning ([Resource(name:MyResource2), Resource(name:MyResource1)])
+        [ 2016-12-13 06:27:58.950064 ] >>> w21-callback returning ([Resource(name:MyResource2), Resource(name:MyResource1)])
         
 Mediator
 ========

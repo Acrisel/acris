@@ -28,14 +28,15 @@ import threading
 from abc import abstractmethod
 from collections import OrderedDict
 import queue
-from functools import reduce
-#from acris.decorated_class import decorated_class, traced_method
+from acris.decorated_class import traced_method
 import time
+import logging
+import inspect
+from collections import namedtuple
+
+logger=logging.getLogger(__name__)
 
 #traced=traced_method(None, True)
-
-
-
 
 class ResourcePoolError(Exception):
     pass
@@ -84,7 +85,8 @@ class Resource(object):
         '''
         return True
     
-        
+Ticket=namedtuple('Ticket', ['pool_name', 'sequence'])
+
 class ResourcePool(NamedSingleton): 
     ''' Singleton pool to managing resources of multiple types.
     
@@ -113,14 +115,13 @@ class ResourcePool(NamedSingleton):
         }
     
     __allow_set_policy=True
-    __lock=threading.Lock()
+    __resource_pool_lock=threading.Lock()
     
     __name=''
     
     __ticket_sequence=Sequence('ResourcePool_ticket')
     __pool_id_sequence=Sequence('ResourcePool_pool_id')
     
-    #@traced
     def __init__(self, name='', resource_cls=Resource, policy={}):
         # sets resource pool policy overriding defaults
         self.name=name
@@ -136,16 +137,28 @@ class ResourcePool(NamedSingleton):
         if self.__allow_set_policy:
             self.__policy=MergedChainedDict(policy, self.__policy)
         else:
-            self.__lock.release()
+            #self.__lock.release()
             raise ResourcePoolError("ResourcePool already in use, cannot set_policy")
         
     def __repr__(self):
-        return "ResourcePool( class: %s, policy: %s)" %(self.__resource_cls.__name__, self.__policy)
+        return "ResourcePool( class: %s, policy: %s)" % (self.__resource_cls.__name__, self.__policy)
     
+    def __sync_acquire(self):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        logger.debug("ResourcePool Acquiring Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        self.__resource_pool_lock.acquire()
+        
+    def __sync_release(self):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        logger.debug("ResourcePool Releasing Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        self.__resource_pool_lock.release()
+        
     def __load(self, sync=False, count=-1):
         ''' loads resources into pool
         '''
-        if sync: self.__lock.acquire()
+        if sync: self.__sync_acquire()
         self.__allow_set_policy=False
         if count < 0:
             load_size=self.__policy['load_size']
@@ -161,10 +174,10 @@ class ResourcePool(NamedSingleton):
                     if activate_on_load: resource.activate()
                 except Exception as e:
                     raise e
-                resource.pool=self.__id
+                resource.pool=self.name
                 
                 self.__available_resources[resource.id_]=resource 
-        if sync: self.__lock.release()          
+        if sync: self.__sync_release()          
     
     def load(self, count=-1):
         ''' loads resources into pool
@@ -172,10 +185,10 @@ class ResourcePool(NamedSingleton):
         self.__load(sync=True, count=-1)         
         return self
     
-    def __remove_ticket(self, ticket):
-        #self.__lock.acquire()
+    def __remove_ticket(self, ticket, sync=False):
+        if sync: self.__sync_acquire()
         del self.__reserved[ticket]
-        #self.__lock.release()
+        if sync: self.__sync_release()
     
     @threaded
     def __wait_on_condition_callback(self, condition, seconds, ticket, callback):
@@ -185,8 +198,9 @@ class ResourcePool(NamedSingleton):
         except RuntimeError:
             pass
         except Exception as e:
-            raise e        
-        callback(self.name, ticket)
+            raise e   
+        logger.debug("%s woke up from condition wait: ticket: %s:" % (self.name,ticket,))     
+        callback(ticket)
         
     def __wait_on_condition_here(self, condition, seconds, ticket):
         try:
@@ -228,10 +242,10 @@ class ResourcePool(NamedSingleton):
         '''
         seconds=None if wait <0 else wait
         condition = threading.Condition()
-        ticket=self.__ticket_sequence()
+        ticket=Ticket(self.name, self.__ticket_sequence())
         self.__awaiting[ticket]=(condition, count,)
         
-        if sync: self.__lock.release()
+        if sync: self.__sync_release()
         
         if not callback:
             result=self.__wait_on_condition_here(condition, seconds, ticket)
@@ -248,16 +262,20 @@ class ResourcePool(NamedSingleton):
             # process finished waiting either due to time passed
             # or that resources were reserved.  
             # Hence, try to pick reserved resources
+            logger.debug("%s Addressing get with ticket %s" % (self.name, ticket))
             result=self.__reserved.get(ticket, None)
             if result: 
-                self.__remove_ticket(ticket)
+                logger.debug("%s found ticket ticket %s" % (self.name, ticket))
+                self.__remove_ticket(ticket=ticket, sync=sync)
                 return result
+            else:
+                logger.debug("%s ticket %s not fond" % (self.name, ticket))
                      
         resource_limit=self.__policy['resource_limit']
         if resource_limit > -1 and count >resource_limit:
             raise ResourcePoolError("Trying to get count (%s) larger than resource limit (%s)" % (count, resource_limit))
         
-        if sync: self.__lock.acquire()
+        if sync: self.__sync_acquire()
         
         activate_on_get=self.__policy['activate_on_get']
         # If there are awaiting processes, wait too, and this call is not after
@@ -290,19 +308,20 @@ class ResourcePool(NamedSingleton):
             # There are enough resources to serve!
             resource_names=list(self.__available_resources.keys())[:count]
             resources=list()
+            logger.debug('%s assigning %s to inuse' % (self.name, resource_names,))
             for name in resource_names:
                 resource=self.__available_resources[name]
                 resources.append(resource)
                 del self.__available_resources[name]
                 self.__inuse_resources[name]=resource
-            if sync: self.__lock.release()
+            if sync: self.__sync_release()
         elif wait != 0:
             # No resources.  But need to wait.
             resources=self.__wait(sync=sync, count=count, wait=wait, callback=callback)
         else:
             # No resources and no need to wait; we are done!
             resources=[]
-            if sync: self.__lock.release()
+            if sync: self.__sync_release()
             pass
         
         if activate_on_get: self.__activate_allocated_resource(resources)
@@ -366,7 +385,7 @@ class ResourcePool(NamedSingleton):
         '''
         
         # validate that all resources provided are legal
-        self.__lock.acquire()
+        self.__sync_acquire()
         pool_resource_name=self.__resource_cls.__name__
         
         for resource in resources: 
@@ -384,18 +403,21 @@ class ResourcePool(NamedSingleton):
         # deposit resource back to available
         resources=list(resources)
         deactivate_on_put=self.__policy['deactivate_on_put']
-        
-        
+                
         for resource in resources: 
             if deactivate_on_put: 
                 try:
                     resource.deactivate()
                 except Exception as e:
+                    self.__sync_release()
                     raise e
+            logger.debug("%s adding to available, removing from inuse %s" % (self.name, resource))
             self.__available_resources[resource.id_]=resource
             del self.__inuse_resources[resource.id_]
         
+        
         for ticket, (condition, count) in list(self.__awaiting.items()):
+            logger.debug("%s found %s awaiting; require: %s, available: %s:" % (self.name, ticket, count, len(self.__available_resources)))
             if count <= len(self.__available_resources):
                 self.__reserved[ticket]=self._get(count=count)
                 with condition:
@@ -410,42 +432,83 @@ class ResourcePool(NamedSingleton):
                 #       Predictive module will learn if it is better to hold the line,
                 #       
                 break
-        self.__lock.release()      
+        self.__sync_release()      
 
 class Callback(object):
     def __init__(self, notify_queue):
         self.q=notify_queue
-    def __call__(self, name, ticket=None):
-        self.q.put((name, ticket,))
+    def __call__(self, ticket=None):
+        logger.debug('notifying ticket: %s' %(ticket,))
+        self.q.put(ticket)
 
-class MultiPoolRequestor(object):
+class Requestor(object):
     
-    __ticket_sequence=Sequence('MultiPoolRequestor_ticket')
+    # __ticket_sequence=Sequence('MultiPoolRequestor_ticket')
     
     def __init__(self, request, wait=-1, callback=None, hold_time=None):
         self.__request=dict([(r.name, (r,count)) for r, count in request])
         self.__wait=wait
         self.__callback=callback
         self.__hold_time=hold_time
-        self.__notify_queue=queue.Queue
+        self.__notify_queue=queue.Queue()
         self.__tickets=list()
-        self.__resoruces=dict()
+        self.__resources=dict()
+        self.__reserved=False
+        self.__resource_pool_requestor_lock=threading.Lock()
+        self.__collect_resources_started=False
+        if callback and hasattr(callback, 'name'):
+            self.__client_name=callback.name
+        else: self.__client_name=''
         self.__get()
     
+    def __sync_acquire(self):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        logger.debug("ResourcePoolRequestor Acquiring Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        self.__resource_pool_requestor_lock.acquire()
+        
+    def __sync_release(self):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        logger.debug("ResourcePoolRequestor Releasing Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        self.__resource_pool_requestor_lock.release()
+
+    def __is_reserved(self):
+        ''' Returns True if all resources are collected
+        '''
+        missings=set(self.__request.keys()) - set(self.__resources.keys())
+        self.__reserved=len(missings) ==0
+        if not self.__reserved:
+            logger.debug("%s missing resources %s" %(self.__client_name, missings))
+        return self.__reserved
+        
     def is_reserved(self):
         ''' Returns True if all resources are collected
         '''
-        return len(set(self.__request.keys()) - set(self.__resoruces.keys())) ==0
+        return self.__reserved
         
     def __get(self):
         callback=Callback(self.__notify_queue) if self.__callback else None
         for rp, count in self.__request.values():
+            logger.debug("%s requesting resources %s(%s)" %(self.__client_name, rp.name, count))
             response=rp.get(count=count, wait=self.__wait, callback=callback, hold_time=self.__hold_time)
+            
             if response:
-                self.__resoruces[rp.name]=response
+                logger.debug("%s received resources %s" %(self.__client_name, response))
+                self.__resources[rp.name]=dict([(r.id_, r) for r in response])
                 
-        if not self.is_reserved():
-            self.__collect_resources()
+        if not self.__is_reserved():
+            go_collect=False
+            self.__sync_acquire()
+            if not self.__collect_resources_started:
+                go_collect=True
+                self.__collect_resources_started=True
+            self.__sync_release()
+            if go_collect:
+                logger.debug("%s going to collect missing resources" % (self.__client_name, ))
+                self.__collect_resources()   
+        else:
+            self.__notify_collected()
     
     @threaded
     def __collect_resources(self):
@@ -453,36 +516,77 @@ class MultiPoolRequestor(object):
         go=True
         wait=self.__wait
         while go:
+            logger.debug("%s trying to get from notify queue (wait: %s)" %(self.__client_name, wait))
             try:
-                rp_name, ticket=self.__notify_queue.get(wait)
+                ticket=self.__notify_queue.get(wait)
             except queue.Empty:
-                ticket=None
+                ticket=(None, None)
+            rp_name=ticket.pool_name
+            
             if ticket:
                 rp, _=self.__request[rp_name]
                 resources=rp.get(ticket=ticket)
-                self.__resoruces[rp_name]=resources
+                logger.debug("Collected resources %s" %(resources))
+                self.__resources[rp_name]=dict([(r.id_, r) for r in resources])
+                
             time_passed=time.time() - start_time
-            if self.__wait:
+            if self.__wait and self.__wait >0:
                 wait=self.__wait - time_passed
                 go=wait > 0
-            go=go and not self.is_reserved()
+            logger.debug("%s all reserved %s" % (self.__client_name, self.__is_reserved(),))
+            go=go and not self.__is_reserved()
         
-        if not self.is_reserved():
-            for rp_name, resources in self.__resoruces.items():
+        if not self.__is_reserved():
+            for rp_name, resources in list(self.__resources.items()):
                 rp, _=self.__request[rp_name]
-                rp.put(resources)
-                del self.__resoruces[rp_name]
-                
-        self.__callback(None)
-                
-                
-               
+                returning=list(resources.values())
+                rp.put(*returning)
+                del self.__resources[rp_name]               
+        else:
+            self.__notify_collected()
+                 
+    def __notify_collected(self):
+        if self.__is_reserved() and self.__callback:
+            self.__callback("True")
+                  
     def get(self,):
         result=None
-        if self.is_reserved:
-            result=reduce(lambda x,y: x.extend(y), [r for r in self.__resource.values()], list())
+        if self.__is_reserved():
+            result=list()
+            for r in self.__resources.values(): result.extend(r.values()) 
+            #result=reduce(lambda x,y: x.extend(y.values()), [r for r in self.__resources.values()], list())
         return result 
             
-       
     def put(self, *resources):
+        logger.debug("%s putting back resources %s" % (self.__client_name, repr(resources)))
+        
+        # ensure resources returned are in alignment with this container.
+        #resource_to_return=list()
+        for resource in resources:
+            rp_name=resource.pool 
+            failed=False 
+            try:
+                rp, _ = self.__request[rp_name]
+            except KeyError:
+                failed=True
+                logger.error("%s ResourcePool %s not found; cannot return resource %s" % (self.__client_name, rp_name, resource))
+            else:
+                rp_resources=self.__resources[rp_name]
+                try:
+                    r=rp_resources[resource.id_]
+                except KeyError:
+                    failed=True
+                    logger.error("%s resource %s not found in pool %s; cannot return." % (self.__client_name, resource, rp_name))
+                else:
+                    del rp_resources[resource.id_]
+                    #resource_to_return.append(resource)
+                    logger.debug("%s returning %s to pool %s" % (self.__client_name, repr(resource), rp.name))
+                    rp.put(resource)
+                
+        if failed:
+            raise ResourcePoolError("%s failed to return resources." % (self.__client_name, ))
+        
+    def __del__(self):
+        # TODO: release resources
         pass
+            

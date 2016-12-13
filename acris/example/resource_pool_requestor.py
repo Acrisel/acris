@@ -34,8 +34,11 @@ rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2
 rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 2, }).load()
    
 class Callback(object):
-    def __init__(self, notify_queue):
+    def __init__(self, notify_queue, name=''):
         self.q=notify_queue
+        self.name=name
+    #def get_name(self):
+    #    return self.name
     def __call__(self,resources=None):
         self.q.put(resources)
 
@@ -43,7 +46,9 @@ class Callback(object):
 def worker_callback(name, rps):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()
-    r=rp.MultiPoolRequestor(request=rps, callback=Callback(notify_queue))
+    callback=Callback(notify_queue, name=name)
+    #print(type(callback))
+    r=rp.Requestor(request=rps, callback=callback)
 
     if r.is_reserved():
         resources=r.get()

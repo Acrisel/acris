@@ -32,11 +32,10 @@ def dont_decorate(f):
     return f
 
 def traced_method(print_func=None, print_args=False):
-    caller=inspect.stack()[1] #filename, lineno
-    #caller="%s(%s)" % (caller.filename, caller.lineno)
-    caller="%s(%s)" % (caller[1], caller[2])
-    
     def print_method_name(name, f=None):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        caller="%s.%s(%s)" % (filename, function_name, line_number)
         if f==None :
             text_id='%s' % (name.__name__)
             method=name
