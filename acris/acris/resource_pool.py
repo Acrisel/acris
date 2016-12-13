@@ -587,6 +587,9 @@ class Requestor(object):
             raise ResourcePoolError("%s failed to return resources." % (self.__client_name, ))
         
     def __del__(self):
-        # TODO: release resources
-        pass
+        # need to make sure all resources are returned
+        for rp_name, resources in self.__resources.item():
+            rp, _ = self.__request[rp_name]
+            for resource in resources:
+                rp.put(resource)
             

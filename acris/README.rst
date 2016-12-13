@@ -421,7 +421,7 @@ Async Example Output
         [ 2016-12-11 13:08:28.416001 ] >>> w22-callback returning ([Resource(name:MyResource2)])
         
 Requestor Example
--------------
+-----------------
 
     .. code-block:: python
 
@@ -439,10 +439,9 @@ Requestor Example
         rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 2, }).load()
    
         class Callback(object):
-            def __init__(self, notify_queue, name=''):
+            def __init__(self, notify_queue):
                 self.q=notify_queue
-                self.name=name
-            def __call__(self,resources=None):
+            def __call__(self, resources=None):
                 self.q.put(resources)
 
         @threaded
@@ -450,20 +449,20 @@ Requestor Example
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
             notify_queue=queue.Queue()
             callback=Callback(notify_queue, name=name)
-            r=rp.Requestor(request=rps, callback=callback)
+            request=rp.Requestor(request=rps, callback=callback)
 
-            if r.is_reserved():
-                resources=r.get()
+            if request.is_reserved():
+                resources=request.get()
             else:
                 print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
                 print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
                 notify_queue.get()
-                resources=r.get()
+                resources=request.get()
 
             print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
             time.sleep(2)
             print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
-            r.put(*resources)
+            request.put(*resources)
 
         r1=worker_callback('>>> w11-callback', [(rp1,1),])    
         r2=worker_callback('>>> w21-callback', [(rp1,1),(rp2,1)])    
@@ -471,7 +470,7 @@ Requestor Example
         r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
                      
 Requestor Example Output
---------------------
+------------------------
 
     .. code-block:: python
 
