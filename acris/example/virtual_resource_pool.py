@@ -21,46 +21,37 @@
 ##############################################################################
 
 import time
-from acris import resource_pool as rp
+from acris import virtual_resource_pool as rp
 from acris import threaded
-import queue
+from acris.mplogger import create_stream_handler
 from datetime import datetime
-from acris.decorated_class import traced_method
+import logging
 
-traced=traced_method(print, True)
+logger=logging.getLogger()
+handler=create_stream_handler(logging_level=logging.DEBUG)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 class MyResource1(rp.Resource): pass
-    
 class MyResource2(rp.Resource): pass
 
-rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 1, }).load()                   
 rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
-   
-class Callback(object):
-    def __init__(self, notify_queue):
-        self.q=notify_queue
-    def __call__(self, ticket=None):
-        self.q.put(ticket)
 
 @threaded
-def worker_callback(name, rp):
-    print('[ %s ] %s getting resource' % (str(datetime.now()), name))
-    notify_queue=queue.Queue()
-    callback=Callback(notify_queue)
-    r=rp.get(callback=callback)
-
-    if not r:
-        print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
-        print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
-        ticket=notify_queue.get()
-        r=rp.get(ticket=ticket)
-    
+def worker_awaiting(name, rp):
+    print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
+    r=rp.get()
     print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
-    time.sleep(2)
-    print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(r)))
+    time.sleep(1)
+    print('[ %s ] %s returning %s' % (str(datetime.now()), name, repr(r)))
     rp.put(*r)
+    
 
-r1=worker_callback('>>> w11-callback', rp1)    
-r2=worker_callback('>>> w21-callback', rp2)    
-r3=worker_callback('>>> w22-callback', rp2)    
-r4=worker_callback('>>> w12-callback', rp1) 
+r1=worker_awaiting('>>> w1-direct', rp1)    
+r2=worker_awaiting('>>> w2-direct', rp2)    
+r3=worker_awaiting('>>> w3-direct', rp2)    
+r4=worker_awaiting('>>> w4-direct', rp1) 
+
+
+

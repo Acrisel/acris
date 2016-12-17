@@ -23,11 +23,17 @@
 import time
 from acris import resource_pool as rp
 from acris import threaded
+from acris.mplogger import create_stream_handler
 import queue
 from datetime import datetime
+import logging
+
+logger=logging.getLogger()
+handler=create_stream_handler(logging_level=logging.DEBUG)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 class MyResource1(rp.Resource): pass
-
 class MyResource2(rp.Resource): pass
 
 rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
@@ -38,7 +44,7 @@ def worker_awaiting(name, rp):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
     r=rp.get()
     print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
-    time.sleep(4)
+    time.sleep(1)
     print('[ %s ] %s returning %s' % (str(datetime.now()), name, repr(r)))
     rp.put(*r)
     

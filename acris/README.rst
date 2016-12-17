@@ -303,6 +303,8 @@ ResourcePool
      
      ResourcePoolRequestor object can be used to request resource set resides in multiple pools.
      
+     ResourcePoolRequestors object manages multiple requests for multiple resources. 
+     
 Sync Example
 ------------
 
@@ -310,7 +312,7 @@ Sync Example
 
         import time
         from acris import resource_pool as rp
-        from acris import threaded
+        from acris import Threaded
         import queue
         from datetime import datetime
 
@@ -321,7 +323,7 @@ Sync Example
         rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
         rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
 
-        @threaded
+        @Threaded()
         def worker_awaiting(name, rp):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
             r=rp.get()
@@ -361,7 +363,7 @@ Async Example
 
         import time
         from acris import resource_pool as rp
-        from acris import threaded
+        from acris import Threaded
         import queue
         from datetime import datetime
 
@@ -378,7 +380,7 @@ Async Example
             def __call__(self, resources=None):
                 self.q.put(resources)
 
-        @threaded
+        @Threaded()
         def worker_callback(name, rp):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
             notify_queue=queue.Queue()
@@ -427,7 +429,7 @@ Requestor Example
 
         import time
         from acris import resource_pool as rp
-        from acris import threaded
+        from acris import Threaded
         import queue
         from datetime import datetime
 
@@ -444,7 +446,7 @@ Requestor Example
             def __call__(self, ready=False):
                 self.q.put(ready)
 
-        @threaded
+        @Threaded()
         def worker_callback(name, rps):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
             notify_queue=queue.Queue()
@@ -490,6 +492,83 @@ Requestor Example Output
         [ 2016-12-13 06:27:56.948587 ] >>> w21-callback doing work ([Resource(name:MyResource2), Resource(name:MyResource1)])
         [ 2016-12-13 06:27:58.949812 ] >>> w22-callback returning ([Resource(name:MyResource2), Resource(name:MyResource1)])
         [ 2016-12-13 06:27:58.950064 ] >>> w21-callback returning ([Resource(name:MyResource2), Resource(name:MyResource1)])
+
+Virtual ResourcePool
+====================
+
+    Like ResourcePool, VResourcePool manages resources.  The main difference between the two is that ResourcePool manages physical resource objects.  VResourcePool manages virtual resources (VResource) that only represent physical resources.  VResources can not be activated or deactivated.
+    
+    One unique property VResourcePool enables is that request could be returned by quantity.
+    
+Virtual Requestors Example
+--------------------------
+
+    .. code-block:: python
+
+        import time
+        from acris import virtual_resource_pool as rp
+        from acris.threaded import Threaded
+        from acris.mplogger import create_stream_handler
+        import queue
+        from datetime import datetime
+        
+        class MyResource1(rp.Resource): pass
+        class MyResource2(rp.Resource): pass
+
+        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+   
+        class Callback(object):
+            def __init__(self, notify_queue, name=''):
+                self.q=notify_queue
+                self.name=name
+            def __call__(self,received=False):
+                self.q.put(received)
+        
+        requestors=rp.Requestors()
+
+        @Threaded()
+        def worker_callback(name, rps):
+            print('[ %s ] %s getting resource' % (str(datetime.now()), name))
+            notify_queue=queue.Queue()
+            callback=Callback(notify_queue, name=name)
+            request_id=requestors.reserve(request=rps, callback=callback)
+
+            if not requestors.is_reserved(request_id):
+                print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
+                notify_queue.get()
+            resources=requestors.get(request_id)
+
+            print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
+            time.sleep(1)
+            print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
+            requestors.put_requested(rps)
+
+        r2=worker_callback('>>> w21-callback', [(rp1,1), (rp2,1)])    
+        r1=worker_callback('>>> w11-callback', [(rp1,1),])    
+        r3=worker_callback('>>> w22-callback', [(rp1,1), (rp2,1)])    
+        r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
+ 
+                     
+Virtual Requestor Example Output
+--------------------------------
+
+    .. code-block:: python
+
+        [ 2016-12-16 14:27:53.224110 ] >>> w21-callback getting resource
+        [ 2016-12-16 14:27:53.224750 ] >>> w11-callback getting resource
+        [ 2016-12-16 14:27:53.225567 ] >>> w22-callback getting resource
+        [ 2016-12-16 14:27:53.226220 ] >>> w12-callback getting resource
+        [ 2016-12-16 14:27:53.237146 ] >>> w11-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-16 14:27:53.238361 ] >>> w12-callback doing work before resource available
+        [ 2016-12-16 14:27:53.241046 ] >>> w21-callback doing work before resource available
+        [ 2016-12-16 14:27:53.242350 ] >>> w22-callback doing work ([Resource(name:MyResource1), Resource(name:MyResource2)])
+        [ 2016-12-16 14:27:54.238443 ] >>> w11-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-16 14:27:54.246868 ] >>> w22-callback returning ([Resource(name:MyResource1), Resource(name:MyResource2)])
+        [ 2016-12-16 14:27:54.257040 ] >>> w12-callback doing work ([Resource(name:MyResource1)])
+        [ 2016-12-16 14:27:54.259858 ] >>> w21-callback doing work ([Resource(name:MyResource1), Resource(name:MyResource2)])
+        [ 2016-12-16 14:27:55.258659 ] >>> w12-callback returning ([Resource(name:MyResource1)])
+        [ 2016-12-16 14:27:55.262741 ] >>> w21-callback returning ([Resource(name:MyResource1), Resource(name:MyResource2)])
         
 Mediator
 ========

@@ -38,6 +38,9 @@ About
 
 from functools import wraps
 from threading import Thread, RLock, Event #, current_thread
+import logging
+
+logger=logging.getLogger(__name__)
 
 __all__ = ['threaded']
 
@@ -118,7 +121,15 @@ class RetriveAsycValue(object):
     def __call__(self, retval):
         print(self.name, ':', retval)  
     
-    
+import inspect
+
+def traces(trace, start=0, end=None):
+    '''
+     File "/private/var/acrisel/sand/gradior/gradior/gradior/gradior/loop_task.py", line 41, in task_wrapper
+    '''
+    result=[ "File \"%s\", line %s, in %s\n    %s" % (frame.filename, frame.lineno, frame.function, frame.code_context[0].rstrip()) for frame in trace]
+    return result
+   
 def threaded(method): 
     @wraps(method)
     def wrapper(*args, **kwargs): 
@@ -127,8 +138,9 @@ def threaded(method):
             try: 
                 result=method(*args, **kwargs) 
             except Exception as e: 
-                print(e)
-                async_result.fail(e)
+                trace=inspect.trace()
+                trace=traces(trace, 2)
+                async_result.fail(trace)
             else:
                 async_result.succeed(result)
         Thread(target = _method).start() 
@@ -136,6 +148,28 @@ def threaded(method):
     return wrapper
 
 
+class Threaded(object):
+    def __init__(self, log=True):
+        self.log=log
+        
+    def __call__(self,method):
+        @wraps(method)
+        def wrapper(*args, **kwargs): 
+            async_result = AsyncResult() 
+            def _method(): 
+                try: 
+                    result=method(*args, **kwargs) 
+                except Exception as e: 
+                    trace=inspect.trace()
+                    trace=traces(trace,start=0, end=None)
+                    if self.log: logger.error("%s\n    %s" % (repr(e), '\n    '.join(trace)))
+                    async_result.fail(trace)
+                else:
+                    async_result.succeed(result)
+            Thread(target = _method).start() 
+            return async_result 
+        return wrapper
+        
     
     
     

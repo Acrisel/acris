@@ -25,7 +25,6 @@ from acris.sequence import Sequence
 from acris.data_types import MergedChainedDict
 from acris.threaded import Threaded
 import threading
-from abc import abstractmethod
 from collections import OrderedDict
 import queue
 from acris.decorated_class import traced_method
@@ -41,8 +40,6 @@ traced=traced_method(logger.debug, True)
 class ResourcePoolError(Exception): pass
 class RequestNotFound(Exception): pass
 
-resource_id_sequence=Sequence('Resource_id')
-
 class Resource(object):  
 
     def __init__(self, *args, **kwargs):
@@ -53,7 +50,7 @@ class Resource(object):
         '''
         self.args=args
         self.kwargs=kwargs
-        self.id_=resource_id_sequence()
+        #self.id_=resource_id_sequence()
         self.resource_name=self.__class__.__name__
         self.pool=None
         
@@ -62,34 +59,11 @@ class Resource(object):
         return self
         
     def __repr__(self):
-        result="Resource(name:%s/%s)" % (self.resource_name, self.id_)
+        result="Resource(name:%s.%s)" % (self.pool, self.resource_name,)
         return result 
-    
-    @abstractmethod
-    def activate(self):
-        ''' activates resource
         
-        Returns:
-            activated resource
-        '''
-        return self
-    
-    @abstractmethod
-    def deactivate(self):
-        ''' deactivates resource
-        
-        Returns:
-            deactivated resource
-        '''
-        return self
-        
-    @abstractmethod
-    def active(self):
-        ''' test if resource is active
-        '''
-        return True
-    
 Ticket=namedtuple('Ticket', ['pool_name', 'sequence'])
+
 
 class ResourcePool(NamedSingleton): 
     ''' Singleton pool to managing resources of multiple types.
@@ -113,9 +87,6 @@ class ResourcePool(NamedSingleton):
     __policy = {'autoload': True, # automatically load resources when fall behind
                 'load_size': 1, # when autoload, number of resources to load
                 'resource_limit': -1, # max resources available
-                'activate_on_load': False, # when loading, if set, activate resource
-                'activate_on_get': False, # when get, activate resource if not already active
-                'deactivate_on_put': False, # when returning resource, deactivate, if set.
         }
     
     __allow_set_policy=True
@@ -130,10 +101,10 @@ class ResourcePool(NamedSingleton):
         # sets resource pool policy overriding defaults
         self.name=name
         self.__resource_cls=resource_cls
-        self.__available_resources=dict()
+        self.__available_resources=list()
         self.__awaiting=OrderedDict()
         self.__reserved=OrderedDict()
-        self.__inuse_resources=dict()
+        self.__inuse_resources=list()
         self.__id=self.__pool_id_sequence()
         #self.mutex = threading.RLock()
         #self.__ticket_sequence=Sequence("ResourcePool.%s" % (resource_cls.__name__, ))
@@ -170,17 +141,12 @@ class ResourcePool(NamedSingleton):
             count=min(load_size, resource_limit) if resource_limit >=0 else load_size
         
         count=count-len(self.__available_resources) 
+        logger.debug('Loading %s resources' % count)
         if count > 0: 
-            activate_on_load=self.__policy['activate_on_load']
             for _ in range(count):
                 resource=self.__resource_cls()
-                try:
-                    if activate_on_load: resource.activate()
-                except Exception as e:
-                    raise e
                 resource.pool=self.name
-                
-                self.__available_resources[resource.id_]=resource 
+                self.__available_resources.append(resource)
         if sync: self.__sync_release()          
     
     def load(self, count=-1):
@@ -197,6 +163,7 @@ class ResourcePool(NamedSingleton):
     
     @Threaded()
     def __wait_on_condition_callback(self, condition, seconds, ticket, callback):
+        logger.debug("%s waiting on condition callback: ticket: %s:" % (self.name,ticket,))     
         try:
             with condition:
                 condition.wait(seconds)
@@ -204,10 +171,11 @@ class ResourcePool(NamedSingleton):
             pass
         except Exception as e:
             raise e   
-        logger.debug("%s woke up from condition wait: ticket: %s:" % (self.name,ticket,))     
+        logger.debug("%s woke up from condition callback: ticket: %s:" % (self.name,ticket,))     
         callback(ticket)
         
     def __wait_on_condition_here(self, condition, seconds, ticket):
+        logger.debug("%s waiting on condition here: ticket: %s:" % (self.name,ticket,))     
         try:
             with condition:
                 condition.wait(seconds)
@@ -255,6 +223,7 @@ class ResourcePool(NamedSingleton):
         
         if not callback:
             result=self.__wait_on_condition_here(condition, seconds, ticket)
+            logger.debug('%s received result from condition here: %s' %(self.name, repr(result)))
         else:
             self.__wait_on_condition_callback(condition, seconds, ticket, callback)
             result=None
@@ -283,12 +252,13 @@ class ResourcePool(NamedSingleton):
         
         if sync: self.__sync_acquire()
         
-        activate_on_get=self.__policy['activate_on_get']
+        #activate_on_get=self.__policy['activate_on_get']
         # If there are awaiting processes, wait too, and this call is not after
         # put (for an awated process).
         if len(self.__awaiting) > 0 and sync:
+            logger.debug("%s already has waiting list, adding this request" % (self.name,))
             resources=self.__wait(sync=sync, count=count, wait=wait, callback=callback)
-            if activate_on_get: self.__activate_allocated_resource(resources)
+            #if activate_on_get: self.__activate_allocated_resource(resources)
             return resources
         
         # try to see if request can be addressed by existing or by loading new 
@@ -304,33 +274,32 @@ class ResourcePool(NamedSingleton):
         
         #print("TOLOAD: %s (available_loaded: %s, missing_to_serve: %s, allowed_to_load: %s, inuse_resources %s, hot_resources: %s)" % \
         #      (to_load, available_loaded, missing_to_serve, allowed_to_load, inuse_resources, hot_resources))
+        
         if to_load > 0:
+            logger.debug("%s needs to load additional resources: %s" % (self.name, to_load))
             self.__load(sync=False, count=to_load)
             
         # if resources are available to serve the request, do so.
         # if not, and there is wait, then do wait.
         # otherwise return no resources.
         if len(self.__available_resources) >= count:
+            logger.debug("%s serving request directly: %s" % (self.name, count))
             # There are enough resources to serve!
-            resource_names=list(self.__available_resources.keys())[:count]
-            resources=list()
-            logger.debug('%s assigning %s to inuse' % (self.name, resource_names,))
-            for name in resource_names:
-                resource=self.__available_resources[name]
-                resources.append(resource)
-                del self.__available_resources[name]
-                self.__inuse_resources[name]=resource
+            resources=self.__available_resources[:count]
+            self.__available_resources=self.__available_resources[count:]
+            self.__inuse_resources.extend(resources)
             if sync: self.__sync_release()
         elif wait != 0:
             # No resources.  But need to wait.
+            logger.debug("%s cannot serve directly, waiting for availability" % (self.name))
             resources=self.__wait(sync=sync, count=count, wait=wait, callback=callback)
         else:
             # No resources and no need to wait; we are done!
+            logger.debug("%s no availability and no wait" % (self.name))
             resources=[]
             if sync: self.__sync_release()
             pass
         
-        if activate_on_get: self.__activate_allocated_resource(resources)
         return resources
     
     def get(self, count=1, wait=-1, callback=None, hold_time=None, expire=None, ticket=None):
@@ -374,6 +343,7 @@ class ResourcePool(NamedSingleton):
             raise ResourcePoolError("Callback must be callable, but it is no: %s" % repr(callback))
         
         result=self._get(sync=True, count=count, wait=wait, callback=callback, hold_time=hold_time, ticket=ticket)
+        logger.debug("%s got result from get: %s" % (self.name, result))
         return result
 
     
@@ -400,28 +370,12 @@ class ResourcePool(NamedSingleton):
             if pool_resource_name != resource_name:
                 raise ResourcePoolError("ResourcePool resource class (%s) doesn't match returned resource (%s)" % \
                                         (pool_resource_name, resource_name))
-            if resource.id_ in self.__available_resources.keys():
-                raise ResourcePoolError("Resource (%s) already in pool's available (%s)" % \
-                                        (resource_name, pool_resource_name, ))                
-            if resource.id_ not in self.__inuse_resources.keys():
-                raise ResourcePoolError("Resource (%s) not in pool's inuse (%s)" % \
-                                        (resource_name, pool_resource_name, ))
                 
         # deposit resource back to available
         resources=list(resources)
-        deactivate_on_put=self.__policy['deactivate_on_put']
-                
-        for resource in resources: 
-            if deactivate_on_put: 
-                try:
-                    resource.deactivate()
-                except Exception as e:
-                    self.__sync_release()
-                    raise e
-            self.__available_resources[resource.id_]=resource
-            del self.__inuse_resources[resource.id_]
-            logger.debug("%s adding to available, removing from inuse %s (available: %s, inuse: %s)" % (self.name, resource, len(self.__available_resources), len(self.__inuse_resources)))
-        
+        count=len(resources)       
+        self.__available_resources.extend(self.__inuse_resources[:count])
+        self.__inuse_resources=self.__inuse_resources[count:]        
         
         for ticket, (condition, count, caller) in list(self.__awaiting.items()):
             logger.debug("%s, %s found %s awaiting; require: %s, available: %s:" % (caller, self.name, ticket, count, len(self.__available_resources)))
@@ -515,7 +469,7 @@ class Requestor(object):
             
             if response:
                 logger.debug("%s received resources %s" %(self.__client_name, response))
-                self.__resources[rp.name]=dict([(r.id_, r) for r in response])
+                self.__resources[rp.name]=response
                 
         if not self.__is_reserved():
             go_collect=False
@@ -540,14 +494,15 @@ class Requestor(object):
             try:
                 ticket=self.__notify_queue.get(timeout=wait)
             except queue.Empty:
-                ticket=(None, None)
-            rp_name=ticket.pool_name
+                ticket=None
             
-            if ticket:
+            if ticket is not None:
+                rp_name=ticket.pool_name
                 rp, _=self.__request[rp_name]
                 resources=rp.get(ticket=ticket)
                 logger.debug("Collected resources %s" %(resources))
-                self.__resources[rp_name]=dict([(r.id_, r) for r in resources])
+                self.__resources[rp_name]=resources
+                #self.__resources[rp_name]=dict([(r.id_, r) for r in resources])
                 
             time_passed=time.time() - start_time
             if self.__wait and self.__wait >0:
@@ -556,14 +511,15 @@ class Requestor(object):
             logger.debug("%s all reserved %s" % (self.__client_name, self.__is_reserved(),))
             go=go and not self.__is_reserved()
         
-        if not self.__is_reserved():
+        if self.__is_reserved():
+            self.__notify_collected()
+        else:
+            logger.debug("%s couldn't collect all resources, releasing collected." % (self.__client_name,))
             for rp_name, resources in list(self.__resources.items()):
                 rp, _=self.__request[rp_name]
-                returning=list(resources.values())
-                rp.put(*returning)
-                del self.__resources[rp_name]               
-        else:
-            self.__notify_collected()
+                #returning=list(resources.values())
+                rp.put(*resources)
+                del self.__resources[rp_name]              
                  
     def __notify_collected(self):
         if self.__is_reserved() and self.__callback:
@@ -574,8 +530,8 @@ class Requestor(object):
         if self.__is_reserved():
             result=list()
             for k, r in list(self.__resources.items()): 
-                result.extend(r.values()) 
-                if not self.__audit: del self.__resources[k]
+                result.extend(r) 
+                #if not self.__audit: del self.__resources[k]
              
         return result 
             
@@ -584,41 +540,44 @@ class Requestor(object):
         
         # ensure resources returned are in alignment with this container.
         #resource_to_return=list()
+        resource_count=dict()
         for resource in resources:
             rp_name=resource.pool 
-            failed=False 
             try:
-                rp, _ = self.__request[rp_name]
+                count=resource_count[rp_name]
             except KeyError:
-                failed=True
-                logger.error("%s ResourcePool %s not found; cannot return resource %s" % (self.__client_name, rp_name, resource))
-            else:
-                # There are two cases; if audited, and if not
-                # When audited, returning resource only if part of this request.
-                # If not audited, return anyway.
-                found=True
-                if len(self.__resources) >0:
-                    rp_resources=self.__resources[rp_name]
-                    try:
-                        del rp_resources[resource.id_]
-                    except:
-                        found=False
-                        logger.error("%s resource %s not found in pool %s; cannot return." % (self.__client_name, resource, rp_name))
-                if found:
-                    #resource_to_return.append(resource)
-                    logger.debug("%s returning %s to pool %s" % (self.__client_name, repr(resource), rp.name))
-                    rp.put(resource)
-                failed=failed or not found
-                
-        if failed:
-            raise ResourcePoolError("%s failed to return resources." % (self.__client_name, ))
+                count=list()
+                resource_count[rp_name]=count
+            count.append(resource)
+            
+        for rp_name, count in resource_count.items():
+            logger.debug("%s ResourcePool %s removing %s resources" % (self.__client_name, rp_name, count))
+            rp_resources=self.__resources[rp_name]
+            self.__resources[rp_name]=rp_resources[len(count):]
+            rp, _ = self.__request[rp_name]
+            rp.put(*count)    
+            
+    def put_requested(self, request):
+        self.__sync_acquire()
+        logger.debug("putting back request: %s" % (repr(request)))
         
+        # ensure resources returned are in alignment with this container.
+        #resource_to_return=list()
+        for rp, count in request:
+            logger.debug("ResourcePool %s removing %s resources" % (rp.name, count))
+            resources=self.__resources[rp.name]
+            #pool=self.__pools[rp.name]
+            to_return=resources[:count]
+            rp.put(*to_return)
+            del resources[:count]
+        
+        self.__sync_release()
+                    
     def __del__(self):
         # need to make sure all resources are returned
         for rp_name, resources in self.__resources.items():
             rp, _ = self.__request[rp_name]
-            for resource in resources.values():
-                rp.put(resource)
+            rp.put(*resources)
                 
         # TODO: notify ResourcePool that not waiting on resources anymore.
 
@@ -631,7 +590,7 @@ class RequestorsCallback(object):
         logger.debug('RequestorsCallback notifying request id %s ticket: %s' % (self.request_id, ticket, ))
         self.q.put( (ticket, self.request_id,) )
          
-#Pool=namedtuple('Pool', ['pool', 'reserved', 'inuse'])
+Pool=namedtuple('Pool', ['pool', 'reserved', 'inuse'])
 
 class Requestors(object):
     ''' Manages multiple requests from multiple resource pools
@@ -755,19 +714,19 @@ class Requestors(object):
     def __update_resource_store(self, request_id, resource_pool, resources):
         logger.debug("Collected resources %s" %(resources))
         request=self.__get_request(request_id)
-        
-        request.resources[resource_pool.name]=dict([(r.id_, r.setattrib('requestor_request_id', request_id)) for r in resources])
+        #new_resources=[r.setattrib('requestor_request_id', request_id)for r in resources]
+        request.resources.update({resource_pool.name: len(resources),})
         # plasce resources in reserved
-        self.__pools[resource_pool.name]=resource_pool
-        '''
+        #self.__pools[resource_pool.name]=resource_pool
+        
         try:
             pool=self.__pools[resource_pool.name]
         except KeyError:
-            pool=Pool(resource_pool, dict(), dict())
+            pool=Pool(resource_pool, list(), list())
             self.__pools[resource_pool.name]=pool
-        pool.reserved.update(request.resources[resource_pool.name])
+        pool.reserved.extend(resources)
         #rp_resources.extend(map(lambda x: x.setattrib('__requestors_request_id', request_id), resources))
-        '''
+        
         return self.__is_reserved(request_id)
     
     def __get_request(self, request_id, default=None):
@@ -838,90 +797,70 @@ class Requestors(object):
     def was_fetched(self, request_id):
         request=self.__get_request(request_id)
         return request.fetched
-    
+                  
     def get(self, request_id):
         result=None
         request=self.__get_request(request_id)
         self.__sync_acquire()
+        
         if request.reserved and not request.fetched:
             result=list()
-            for _, resources in list(request.resources.items()): 
-                result.extend(resources.values()) 
+            #for _, resources in list(request.resources.items()): 
+            for rp_name, count in request.resources.items():
+                pool=self.__pools[rp_name]
+                resources=pool.reserved[:count]
+                del pool.reserved[count:]
+                pool.inuse.extend(resources)
+                result.extend(resources) 
+            request.fetched=True    
             request.request.clear()
-            request.fetched=True
             logger.debug("%s remove required and resources %s" %(request.client_name, request_id,))
-        self.__sync_release() 
         
+        self.__sync_release() 
         return result 
             
     def put(self, *resources):
-        self.__sync_acquire()
+        #self.__sync_acquire()
         logger.debug("putting back resources %s" % (repr(resources)))
+        pool_count=dict()
+        for resource in resources:
+            rp_name=resource.pool
+            try: 
+                count=pool_count.get[rp_name]
+            except KeyError:
+                count=list()
+                pool_count.get[rp_name]=list
+            count.append(resource)
         
         # ensure resources returned are in alignment with this container.
-        #resource_to_return=list()
-        for resource in resources:            
-            rp_name=resource.pool 
-            failed=False 
-            try:
-                rp= self.__pools[rp_name]
-            except KeyError:
-                failed=True
-                logger.error("ResourcePool %s not found; cannot return resource %s" % (rp_name, resource))
-            else:
-                # There are two cases; if audited, and if not
-                # When audited, returning resource only if part of this request.
-                # If not audited, return anyway.
-                #rp=pool.pool
-                logger.debug("Returning %s to pool %s" % (repr(resource), rp.name))
-                rp.put(resource)
-                request_id=resource.requestor_request_id
-                request=self.__requests[request_id]
-                del request.resources[rp_name][resource.id_]
-                #del pool.inuse[resource.id_]
-                
-        if failed:
-            raise ResourcePoolError("Failed to return resources." )
-        self.__sync_release()
+        self.put_requested([ (self.__pools[rp_name].pool, count) 
+                            for rp_name, count in pool_count.items() ])    
 
-    def put_requested(self, request_id):
+    def put_requested(self, request):
         ''' returns fetched request formated as in get.
         
         Args:
             request: list of tuples of resource pool and amount requested
         '''
+        
         self.__sync_acquire()
-        logger.debug("putting back request id: %s" % (repr(request_id)))
+        logger.debug("putting back request: %s" % (repr(request)))
         
         # ensure resources returned are in alignment with this container.
         #resource_to_return=list()
-        request=self.__requests[request_id]
-        for rp_name, resources in request.resources.items():
-            failed=False 
-            try:
-                rp= self.__pools[rp_name]
-            except KeyError:
-                failed=True
-                logger.error("ResourcePool %s not found; cannot return resources" % (rp_name, ))
-            else:
-                # There are two cases; if audited, and if not
-                # When audited, returning resource only if part of this request.
-                # If not audited, return anyway.
-                #logger.debug("Returning %s to pool %s" % (repr(resource), rp.name))
-                for resource in resources:
-                    rp.put(resource)
-            
-            
-        if failed:
-            raise ResourcePoolError("Failed to return resources." )
+        for rp, count in request:
+            logger.debug("ResourcePool %s removing %s resources" % (rp.name, count))
+            pool=self.__pools[rp.name]
+            to_return=pool.inuse[:count]
+            pool.pool.put(*to_return)
+            del pool.inuse[:count]
+        
         self.__sync_release()
         
     # TODO: rebuild del of captured resources
     def __del__(self):
-    #    # need to make sure all resources are returned
-        for request_id, request in self.__requests.items():
-            for rp_name, resources in request.resources.items():
-                rp=self.__pools[rp_name]
-                for resource in resources.values():
-                    rp.put(resource)
+        # need to make sure all resources are returned
+        for pool in self.__pools.values():
+            for resource in pool.inuse + pool.reserved:
+                pool.pool.put(resource)
 

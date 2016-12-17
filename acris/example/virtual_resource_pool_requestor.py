@@ -21,13 +21,19 @@
 ##############################################################################
 
 import time
-from acris import resource_pool as rp
-from acris import threaded
+from acris import virtual_resource_pool as rp
+from acris import Threaded
+from acris.mplogger import create_stream_handler
 import queue
 from datetime import datetime
+import logging
+
+logger=logging.getLogger()
+handler=create_stream_handler(logging_level=logging.DEBUG)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 class MyResource1(rp.Resource): pass
-    
 class MyResource2(rp.Resource): pass
 
 rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
@@ -40,7 +46,7 @@ class Callback(object):
     def __call__(self,received=False):
         self.q.put(received)
 
-@threaded
+@Threaded()
 def worker_callback(name, rps):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()
@@ -52,12 +58,11 @@ def worker_callback(name, rps):
         resources=requestor.get()
     else:
         print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
-        print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
         notify_queue.get()
         resources=requestor.get()
 
     print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
-    time.sleep(2)
+    time.sleep(1)
     print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
     requestor.put(*resources)
 
