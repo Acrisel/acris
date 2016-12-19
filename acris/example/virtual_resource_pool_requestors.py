@@ -31,7 +31,7 @@ import logging
 logger=logging.getLogger()
 handler=create_stream_handler(logging_level=logging.DEBUG)
 logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 class MyResource1(rp.Resource): pass
 class MyResource2(rp.Resource): pass
@@ -58,6 +58,7 @@ def worker_callback(name, rps):
     request_id=requestors.reserve(request=rps, callback=callback)
 
     if not requestors.is_reserved(request_id):
+        time.sleep(1)
         print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
     
     print('[ %s ] %s collecting notification' % (str(datetime.now()), name,))
@@ -71,7 +72,7 @@ def worker_callback(name, rps):
     #requestors.put(*resources)
     requestors.put_requested(rps)
 
-r2=worker_callback('>>> w21-callback', [(rp1,1), (rp2,1)])    
+r2=worker_callback('>>> w21-callback', [(rp1,2), (rp2,1)])    
 r1=worker_callback('>>> w11-callback', [(rp1,1),])    
 r3=worker_callback('>>> w22-callback', [(rp1,1), (rp2,1)])    
 r4=worker_callback('>>> w12-callback', [(rp1,1),]) 

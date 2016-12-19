@@ -39,7 +39,7 @@ level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %
                 'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
                 }
     
-mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
+mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats, datefmt='%Y-%m-%d,%H:%M:%S.%f')
 mplogger.start()
 
 logger.debug("starting sub processes")
@@ -56,3 +56,4 @@ for proc in procs:
 logger.debug("sub processes completed")
 
 mplogger.stop()
+

@@ -1,4 +1,4 @@
-__version__ = "1.1.12"
+__version__ = "1.1.13"
 
 from .threaded import threaded, Threaded, RetriveAsycValue
 from .singleton import Singleton, NamedSingleton

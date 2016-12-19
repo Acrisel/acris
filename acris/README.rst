@@ -233,25 +233,43 @@ Within main process
 
     .. code-block:: python
 	
-        import logging
         import time
+        import random
+        import logging
+        from acris import MpLogger
+        import os
+        import multiprocessing as mp
 
         logger=logging.getLogger(__name__)
 
-        level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s.%(lineno)d ]",
+        def subproc(limit=1):
+            for i in range(limit):
+                sleep_time=3/random.randint(1,10)
+                time.sleep(sleep_time)
+                logger.info("proc [%s]: %s/%s - sleep %4.4ssec" % (os.getpid(), i, limit, sleep_time))
+
+        level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s(%(lineno)d) ]",
                         'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
                         }
-
-
-        mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats)
+    
+        mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats, datefmt='%Y-%m-%d,%H:%M:%S.%f')
         mplogger.start()
 
         logger.debug("starting sub processes")
-        # running processes
-        logger.debug("joining sub processes")
+        procs=list()
+        for limit in [1, 1]:
+            proc=mp.Process(target=subproc, args=(limit, ))
+            procs.append(proc)
+            proc.start()
+    
+        for proc in procs:
+            if proc:
+                proc.join()
+    
+        logger.debug("sub processes completed")
 
-        mplogger.stop()
-	
+        mplogger.stop()	
+        
 Within individual process
 `````````````````````````
     .. code-block:: python
@@ -266,10 +284,10 @@ Example output
 
     .. code-block:: python
 
-        [ 2016-12-06 13:39:56,196 ][ DEBUG ][ starting sub processes ][ mptest.<module>.178 ]
-        [ 2016-12-06 13:39:56,630 ][ INFO ][ proc [2663]: 0/1 - sleep 0.42sec ]
-        [ 2016-12-06 13:39:56,802 ][ INFO ][ proc [2664]: 0/1 - sleep  0.6sec ]
-        [ 2016-12-06 13:39:56,805 ][ DEBUG ][ sub processes completed ][ mptest.<module>.189 ]
+        [ 2016-12-19,11:39:44.953189 ][ DEBUG ][ starting sub processes ][ mplogger.<module>(45) ]
+        [ 2016-12-19,11:39:45.258794 ][ INFO ][ proc [932]: 0/1 - sleep  0.3sec ]
+        [ 2016-12-19,11:39:45.707914 ][ INFO ][ proc [931]: 0/1 - sleep 0.75sec ]
+        [ 2016-12-19,11:39:45.710487 ][ DEBUG ][ sub processes completed ][ mplogger.<module>(56) ]
 	
 Data Types
 ==========

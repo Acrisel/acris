@@ -26,6 +26,7 @@ import os
 import multiprocessing as mp
 from copy import copy
 from acris.timed_sized_logging_handler import TimedSizedRotatingHandler
+import datetime
 
 class MpQueueListener(QueueListener):
     def __init__(self, queue, *handlers):
@@ -66,6 +67,18 @@ class MpQueueListener(QueueListener):
             hdlr.close()
             self.handlers.remove(hdlr)
             
+class MicrosecondsDatetimeFormatter(logging.Formatter):
+    converter=datetime.datetime.fromtimestamp
+    def formatTime(self, record, datefmt=None):
+        #print('convert:', datefmt)
+        ct = self.converter(record.created)
+        if datefmt:
+            s = ct.strftime(datefmt)
+        else:
+            t = ct.strftime("%Y-%m-%d %H:%M:%S")
+            s = "%s.%03d" % (t, record.msecs)
+        return s
+            
 class LevelBasedFormatter(logging.Formatter):
     
     defaults={
@@ -73,36 +86,37 @@ class LevelBasedFormatter(logging.Formatter):
         'default' : "%(asctime)-15s: %(levelname)-7s: %(message)s",
         }
  
-    def __init__(self, level_formats={}):
+    def __init__(self, level_formats={}, datefmt=None):
         defaults=LevelBasedFormatter.defaults
         if level_formats:
             defaults=copy(LevelBasedFormatter.defaults)
             defaults.update(level_formats)
             
-        self.defaults=dict([(level, logging.Formatter(fmt) ) for level, fmt in defaults.items()])
-            
+        self.datefmt=datefmt  
+        self.defaults=dict([(level, MicrosecondsDatetimeFormatter(fmt=fmt, datefmt=self.datefmt)) for level, fmt in defaults.items()])
         self.default_format=self.defaults['default']  
-        logging.Formatter.__init__(self, self.default_format)
+        logging.Formatter.__init__(self, fmt=self.default_format, datefmt=self.datefmt)
 
     def format(self, record):
-        formatter=self.defaults.get(record.levelno, self.default_format)
+        formatter=self.defaults.get(record.levelno, self.default_format,)
         result = formatter.format(record)
         return result
     
-def create_stream_handler(logging_level=logging.INFO, level_formats={}):
+def create_stream_handler(logging_level=logging.INFO, level_formats={}, datefmt=None):
     handler = logging.StreamHandler()
     handler.setLevel(logging_level)
-    formatter = LevelBasedFormatter(level_formats) 
+    formatter = LevelBasedFormatter(level_formats=level_formats,datefmt=datefmt) 
     handler.setFormatter(formatter)
     return handler
 
 class MpLogger(object):
     
-    def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, logging_root=None):
+    def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, datefmt=None, logging_root=None):
         self.logdir=logdir
         self.logging_level=logging_level
         self.level_formats=level_formats
-        self.record_formatter=LevelBasedFormatter(level_formats)
+        self.datefmt=datefmt
+        self.record_formatter=LevelBasedFormatter(level_formats=level_formats, datefmt=datefmt)
         self.logging_root=logging_root
         self.logger_initialized=False
         self.queue_listener=None
@@ -130,7 +144,7 @@ class MpLogger(object):
         
         self.queue_listener = MpQueueListener(q,)
         
-        handler=create_stream_handler(self.logging_level, self.level_formats)
+        handler=create_stream_handler(logging_level=self.logging_level, level_formats=self.level_formats, datefmt=self.datefmt)
         #handler = logging.StreamHandler()
         #handler.setLevel(self.logging_level)
         #formatter = self.record_formatter 
