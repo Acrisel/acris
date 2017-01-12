@@ -21,7 +21,7 @@
 ##############################################################################
 # Util/Observer.py
 # Class support for "observer" pattern.
-import acris.synchronized as sync
+import acris.idioms.synchronized as sync
 
 class Observer(object):
     def update(self, observable, arg):

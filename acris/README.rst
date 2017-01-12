@@ -1,19 +1,42 @@
-=======
+=====
 acris
-=======
+=====
+
+----------------------------------------
+programming idioms and utilities library
+----------------------------------------
+
+.. contents:: Table of Contents
+   :depth: 2
 
 Overview
 ========
 
-    **acris** is a python library providing useful programming patterns.
+    **acris** is a python library providing useful programming patterns and tools.
+    
+    **acris** started as Acrisel's internal idioms and utilities for programmers.
+    
+    It included:
+        1. programming idioms that are repeatedly used by programmers.
+        #. utilities that helps programmers and administrators manage their environments
+    
+    We decided to contribute this library to Python community as a token of appreciation to
+    what this community enables us.
+    
+    We hope that you will find this library useful and helpful as we find it.
+    
+    If you have comments or insights, please don't hesitate to contact us at support@acrisel.com
+    
+Programming Idoms
+=================
 
 threaded
-========
+--------
 
     decorator for methods that can be executed as a thread.  
 
 example
--------
+~~~~~~~
 
     .. code-block:: python
 
@@ -41,7 +64,7 @@ example
 
           
 example output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -67,12 +90,12 @@ example output
         te2 : 18
 
 Singleton and NamedSingleton
-============================
+----------------------------
 
     meta class that creates singleton footprint of classes inheriting from it.
 
 Singleton example
------------------
+~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -87,7 +110,7 @@ Singleton example
                 return step_id  
 
 example output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
  
@@ -106,7 +129,7 @@ example output
         B 2
     
 NamedSingleton example
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -124,7 +147,7 @@ NamedSingleton example
                 return step_id  
 
 example output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
  
@@ -143,12 +166,12 @@ example output
         B 0
     
 Sequence
-========
+--------
 
     meta class to produce sequences.  Sequence allows creating different sequences using name tags.
 
 example
--------
+~~~~~~~
 
     .. code-block:: python
 
@@ -167,7 +190,7 @@ example
         print('B', B()) 
 
 example output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
      
@@ -179,13 +202,13 @@ example output
         B 1
 
 TimedSizedRotatingHandler
-=========================
+-------------------------
 	
     Use TimedSizedRotatingHandler is combining TimedRotatingFileHandler with RotatingFileHandler.  
     Usage as handler with logging is as defined in Python's logging how-to
 	
 example
--------
+~~~~~~~
 
     .. code-block:: python
 	
@@ -216,7 +239,7 @@ example
         logger.critical('critical message')	
 
 MpLogger and LevelBasedFormatter
-================================
+--------------------------------
 
     Multiprocessor logger using QueueListener and QueueHandler
     It uses TimedSizedRotatingHandler as its logging handler
@@ -226,7 +249,7 @@ MpLogger and LevelBasedFormatter
     can be used as such in customized logging handlers. 
 	
 example
--------
+~~~~~~~
 
 Within main process
 ```````````````````
@@ -280,7 +303,7 @@ Within individual process
         logger.debug("logging from sub process")
     
 Example output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -290,12 +313,12 @@ Example output
         [ 2016-12-19,11:39:45.710487 ][ DEBUG ][ sub processes completed ][ mplogger.<module>(56) ]
 	
 Data Types
-==========
+----------
 
     varies derivative of Python data types
 
 MergeChainedDict
-----------------
+~~~~~~~~~~~~~~~~
 
     Similar to ChainedDict, but merged the keys and is actually derivative of dict.
 
@@ -314,7 +337,7 @@ MergeChainedDict
     	{1: 55, 2: 22, 3: 33, 4: 66}
 
 ResourcePool
-============
+------------
 
      Resource pool provides program with interface to manager resource pools.  This is used as means to 
      funnel processing.  
@@ -324,7 +347,7 @@ ResourcePool
      ResourcePoolRequestors object manages multiple requests for multiple resources. 
      
 Sync Example
-------------
+~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -357,7 +380,7 @@ Sync Example
         r4=worker_awaiting('>>> w12-direct', rp1)   
               
 Sync Example Output
--------------------
+~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -375,7 +398,7 @@ Sync Example Output
         [ 2016-12-11 13:06:22.667149 ] >>> w22-direct returning [Resource(name:MyResource2)]
         
 Async Example
--------------
+~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -421,7 +444,7 @@ Async Example
         r4=worker_callback('>>> w12-callback', rp1)  
                      
 Async Example Output
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -441,7 +464,7 @@ Async Example Output
         [ 2016-12-11 13:08:28.416001 ] >>> w22-callback returning ([Resource(name:MyResource2)])
         
 Requestor Example
------------------
+~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -490,7 +513,7 @@ Requestor Example
         r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
                      
 Requestor Example Output
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -512,14 +535,14 @@ Requestor Example Output
         [ 2016-12-13 06:27:58.950064 ] >>> w21-callback returning ([Resource(name:MyResource2), Resource(name:MyResource1)])
 
 Virtual ResourcePool
-====================
+--------------------
 
     Like ResourcePool, VResourcePool manages resources.  The main difference between the two is that ResourcePool manages physical resource objects.  VResourcePool manages virtual resources (VResource) that only represent physical resources.  VResources can not be activated or deactivated.
     
     One unique property VResourcePool enables is that request could be returned by quantity.
     
 Virtual Requestors Example
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -569,7 +592,7 @@ Virtual Requestors Example
  
                      
 Virtual Requestor Example Output
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -589,12 +612,12 @@ Virtual Requestor Example Output
         [ 2016-12-16 14:27:55.262741 ] >>> w21-callback returning ([Resource(name:MyResource1), Resource(name:MyResource2)])
         
 Mediator
-========
+--------
     
     Class interface to generator allowing query of has_next()
     
 Example 
--------
+~~~~~~~
 
     .. code-block:: python
 
@@ -613,7 +636,7 @@ Example
         print(i, m.has_next(), next(m))
 
 Example Output
---------------
+~~~~~~~~~~~~~~
 
     .. code-block:: python
 
@@ -634,3 +657,108 @@ Example Output
             value=next(self.generator)
         StopIteration       
         
+Utilities
+=========
+
+commdir
+-------
+
+    .. code-block:: python
+
+        usage: commdir.py [-h] [--dir1 DIR1] [--dir2 DIR2] [--quiet] [--out [REPORT]]
+                          [--follow] [--detailed] [--sync-cmd] [--merge] [--total]
+                          [--ignore [PATTERN [PATTERN ...]]]
+
+        Reports differences in directory structure and content. commdir.py will exit
+        with 0 if directories found the same. otherwise, it will exit with 1.
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir1 DIR1           source folder for the comparison
+          --dir2 DIR2           target folder for the comparison
+          --quiet               avoid writing any report out, default: False
+          --out [REPORT]        file to write report to, default: stdout
+          --follow              follow links when walking folders, default: False
+          --detailed            provide detailed file level diff, default: False
+          --sync-cmd            provide commands that would align dirs and files,
+                                default: False
+          --merge               when sync-cmd, set how diff commands would be
+                                resolved, default: dir1 is base.
+          --total               outputs summary.
+          --ignore [PATTERN [PATTERN ...]]
+                                pattern to ignore
+
+        example: python commdir.py --dir1 my_folder --dir2 other_folder --ignore __pycache__ .*DS_Store
+        
+    commdir.py also provides access to its underlined function commdir:
+
+    .. code-block:: python
+    
+        commdir(dir1, dir2, ignore=[], detailed=False, followlinks=False, quiet=False, bool_result=True)
+    
+    compares two directory structures and their files.
+    
+        commdir walks through two directories, dir1 and dir2. While walking, it aggregates information
+        on the difference between the two structures and their content.
+    
+        If bool_result is True, commdir will return True if difference was found. 
+        When False, it would return a DiffContent namedtuple with the following fields:
+        
+            - diff (boolean)
+            - folders_only_in_dir1 (list)
+            - folders_only_in_dir2 (list) 
+            - files_only_in_dir1 (list)
+            - files_only_in_dir2 (list) 
+            - diff_files (list)
+            - diff_detail (list)
+     
+        Args:
+            dir1, dir2: two directories structure to compare.
+            ignore: list of regular expression strings to ignore, when directory is ignored, all its sub folders are ignored too.
+            detailed: if set, will generate detailed file level comparison.
+            followlinks: if set, symbolic links will be followed.
+            quiet: if set, information will not be printed to stdio.
+            bool_result: instruct how the function would respond to caller (True: boolean or False: DiffContent)
+
+commdir example output
+~~~~~~~~~~~~~~~~~~~~~~
+
+    .. code-block:: python
+
+        ----------------------------
+        folders only in other_folder
+        ----------------------------
+           static/admin/fonts
+           static/admin/js/vendor
+           static/admin/js/vendor/jquery
+           static/admin/js/vendor/xregexp
+        -----------------------
+        files only in my_folder
+        -----------------------
+           docs/._example.rst
+           docs/._user_guide.rst
+        --------------------------
+        files only in other_folder
+        --------------------------
+           static/admin/css/fonts.css
+           static/admin/fonts/LICENSE.txt
+           static/admin/fonts/README.txtff
+           static/admin/img/LICENSE
+           static/admin/js/vendor/jquery/jquery.js
+           static/admin/js/vendor/jquery/jquery.min.js
+           static/admin/js/vendor/xregexp/xregexp.min.js
+        ----------------
+        files different:
+        ----------------
+           .pydevproject
+           ui/settings/prod.py
+           ui/wsgi.py
+           personalenv.xml
+        --------
+        Summary:
+        --------
+          Folders only in my_folder: 0
+          Files only in my_folder: 2
+          Folders only in other_folder: 4
+          Files only in other_folder: 7
+          Files different: 4
