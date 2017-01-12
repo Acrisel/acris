@@ -20,18 +20,19 @@
 #
 ##############################################################################
 
-from acris.singleton import NamedSingleton
-from acris.sequence import Sequence
-from acris.data_types import MergedChainedDict
-from acris.threaded import Threaded
+from .singleton import NamedSingleton
+from .sequence import Sequence
+from .data_types import MergedChainedDict
+from .threaded import Threadit
 import threading
 from collections import OrderedDict
 import queue
-from acris.decorated_class import traced_method
+from acris.idioms.decorate import traced_method
 import time
 import logging
 import inspect
 from collections import namedtuple
+from .decorate import LogCaller
 
 logger=logging.getLogger(__name__)
 
@@ -118,16 +119,18 @@ class ResourcePool(NamedSingleton):
     def __repr__(self):
         return "ResourcePool( class: %s, policy: %s)" % (self.__resource_cls.__name__, self.__policy)
     
+    @traced
     def __sync_acquire(self):
-        (frame, filename, line_number,
-         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
-        logger.debug("ResourcePool Acquiring Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        #(frame, filename, line_number,
+        # function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        #logger.debug("ResourcePool Acquiring Lock; %s.%s(%s)" % (filename, function_name, line_number))
         self.__resource_pool_lock.acquire()
         
+    @traced
     def __sync_release(self):
-        (frame, filename, line_number,
-         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
-        logger.debug("ResourcePool Releasing Lock; %s.%s(%s)" % (filename, function_name, line_number))
+        #(frame, filename, line_number,
+        # function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        #logger.debug("ResourcePool Releasing Lock; %s.%s(%s)" % (filename, function_name, line_number))
         self.__resource_pool_lock.release()
         
     def __load(self, sync=False, count=-1):
@@ -161,7 +164,7 @@ class ResourcePool(NamedSingleton):
         del self.__reserved[ticket]
         if sync: self.__sync_release()
     
-    @Threaded()
+    @Threadit()
     def __wait_on_condition_callback(self, condition, seconds, ticket, callback):
         logger.debug("%s waiting on condition callback: ticket: %s:" % (self.name,ticket,))     
         try:
@@ -484,7 +487,7 @@ class Requestor(object):
         else:
             self.__notify_collected()
     
-    @Threaded()
+    @Threadit()
     def __collect_resources(self):
         start_time=time.time()
         go=True
@@ -550,7 +553,7 @@ class Requestor(object):
                 resource_count[rp_name]=count
             count.append(resource)
             
-        for rp_name, count in resource_count.items():
+        for rp_name, count in list(resource_count.items()):
             logger.debug("%s ResourcePool %s removing %s resources" % (self.__client_name, rp_name, count))
             rp_resources=self.__resources[rp_name]
             self.__resources[rp_name]=rp_resources[len(count):]
@@ -575,7 +578,7 @@ class Requestor(object):
                     
     def __del__(self):
         # need to make sure all resources are returned
-        for rp_name, resources in self.__resources.items():
+        for rp_name, resources in list(self.__resources.items()):
             rp, _ = self.__request[rp_name]
             rp.put(*resources)
                 
@@ -742,7 +745,7 @@ class Requestors(object):
     def __evaluate_collect_wait_time(self):
         waits=list() 
         found_endless_waiter=False 
-        for request_id, request in self.__requests.items():
+        for request_id, request in list(self.__requests.items()):
             if self.__is_reserved(request_id): continue
             time_passed=time.time() - request.start_time
             if request.wait and request.wait >0:
@@ -758,7 +761,7 @@ class Requestors(object):
         logger.debug("Wait evaluated: %s: waits: %s: found endless: %s" %(wait, len(waits), found_endless_waiter,))
         return wait
     
-    @Threaded()
+    @Threadit()
     def __collect_resources(self):
         wait=self.__evaluate_collect_wait_time()
         logger.debug("starting get loop (wait: %s, collect: %s)" %(wait,self.__collect_resources_started))
@@ -806,7 +809,7 @@ class Requestors(object):
         if request.reserved and not request.fetched:
             result=list()
             #for _, resources in list(request.resources.items()): 
-            for rp_name, count in request.resources.items():
+            for rp_name, count in list(request.resources.items()):
                 pool=self.__pools[rp_name]
                 resources=pool.reserved[:count]
                 del pool.reserved[count:]
@@ -834,7 +837,7 @@ class Requestors(object):
         
         # ensure resources returned are in alignment with this container.
         self.put_requested([ (self.__pools[rp_name].pool, count) 
-                            for rp_name, count in pool_count.items() ])    
+                            for rp_name, count in list(pool_count.items())])    
 
     def put_requested(self, request):
         ''' returns fetched request formated as in get.

@@ -1,9 +1,4 @@
 #!/bin/env python3 
-
-from pexpect import pxssh
-import getpass
-import os
-
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
@@ -25,6 +20,10 @@ import os
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
+
+from pexpect import pxssh
+import getpass
+import os
 
 try:
     s = pxssh.pxssh()

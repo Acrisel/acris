@@ -22,8 +22,8 @@
 
 import time
 from acris import resource_pool as rp
-from acris.threaded import Threaded
-from acris.mplogger import create_stream_handler
+from acris import Threadit
+from acris import create_stream_handler
 import queue
 from datetime import datetime
 import logging
@@ -49,7 +49,7 @@ class Callback(object):
         
 requestors=rp.Requestors()
 
-@Threaded()
+@Threadit()
 def worker_callback(name, rps):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()

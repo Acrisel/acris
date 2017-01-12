@@ -16,4 +16,9 @@ n=10
 m=Mediator(yrange(n))
 for i in range(n):
     print(i, m.has_next(3), next(m))
-print(i, m.has_next(), next(m))
+    
+try:
+    print(i, m.has_next(), next(m))
+except StopIteration:
+    print('Stopped on', i)
+    raise

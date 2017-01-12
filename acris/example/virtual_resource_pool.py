@@ -22,8 +22,8 @@
 
 import time
 from acris import virtual_resource_pool as rp
-from acris import threaded
-from acris.mplogger import create_stream_handler
+from acris import threadit
+from acris import create_stream_handler
 from datetime import datetime
 import logging
 
@@ -38,7 +38,7 @@ class MyResource2(rp.Resource): pass
 rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 1, }).load()                   
 rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
 
-@threaded
+@threadit
 def worker_awaiting(name, rp):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
     r=rp.get()

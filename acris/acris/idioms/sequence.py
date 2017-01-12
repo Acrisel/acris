@@ -21,8 +21,9 @@
 ##############################################################################
 
 
-from acris import Singleton
-from acris.decorated_class import decorated_class, traced_method
+from .singleton import Singleton
+from .decorate import traced_method
+from acris.idioms import decorate
 
 #tracer=traced_method(print)
 

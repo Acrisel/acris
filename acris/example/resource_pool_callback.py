@@ -22,10 +22,10 @@
 
 import time
 from acris import resource_pool as rp
-from acris import threaded
+from acris import threadit
 import queue
 from datetime import datetime
-from acris.decorated_class import traced_method
+from acris import traced_method
 
 traced=traced_method(print, True)
 
@@ -42,7 +42,7 @@ class Callback(object):
     def __call__(self, ticket=None):
         self.q.put(ticket)
 
-@threaded
+@threadit
 def worker_callback(name, rp):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()

@@ -22,8 +22,8 @@
 
 import time
 from acris import virtual_resource_pool as rp
-from acris.threaded import Threaded
-from acris.mplogger import create_stream_handler
+from acris import Threadit
+from acris import create_stream_handler
 import queue
 from datetime import datetime
 import logging
@@ -48,13 +48,12 @@ class Callback(object):
         
 requestors=rp.Requestors()
 
-@Threaded()
+@Threadit()
 def worker_callback(name, rps):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()
     callback=Callback(notify_queue, name=name)
-    #print(type(callback))
-    #requestor=rp.Requestor(request=rps, callback=callback,audit=False)
+    
     request_id=requestors.reserve(request=rps, callback=callback)
 
     if not requestors.is_reserved(request_id):
@@ -72,7 +71,9 @@ def worker_callback(name, rps):
     #requestors.put(*resources)
     requestors.put_requested(rps)
 
-r2=worker_callback('>>> w21-callback', [(rp1,2), (rp2,1)])    
-r1=worker_callback('>>> w11-callback', [(rp1,1),])    
-r3=worker_callback('>>> w22-callback', [(rp1,1), (rp2,1)])    
-r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
+# This has high potential to lock!!!!
+
+r1=worker_callback('>>> r1', [(rp1,2), (rp2,1)])    
+r2=worker_callback('>>> r2', [(rp1,1),])    
+r3=worker_callback('>>> r3', [(rp1,1), (rp2,1)])    
+r4=worker_callback('>>> r4', [(rp1,1),]) 

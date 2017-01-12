@@ -19,9 +19,8 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-# Util/Observer.py
-# Class support for "observer" pattern.
-import acris.idioms.synchronized as sync
+
+import .synchronized as sync
 
 class Observer(object):
     def update(self, observable, arg):

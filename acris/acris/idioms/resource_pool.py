@@ -20,15 +20,15 @@
 #
 ##############################################################################
 
-from acris.singleton import NamedSingleton
-from acris.sequence import Sequence
-from acris.data_types import MergedChainedDict
-from acris.threaded import Threaded
+from .singleton import NamedSingleton
+from .sequence import Sequence
+from .data_types import MergedChainedDict
+from .threaded import Threadit
 import threading
 from abc import abstractmethod
 from collections import OrderedDict
 import queue
-from acris.decorated_class import traced_method
+from acris.idioms.decorate import traced_method
 import time
 import logging
 import inspect
@@ -195,7 +195,7 @@ class ResourcePool(NamedSingleton):
         del self.__reserved[ticket]
         if sync: self.__sync_release()
     
-    @Threaded()
+    @Threadit()
     def __wait_on_condition_callback(self, condition, seconds, ticket, callback):
         try:
             with condition:
@@ -530,7 +530,7 @@ class Requestor(object):
         else:
             self.__notify_collected()
     
-    @Threaded()
+    @Threadit()
     def __collect_resources(self):
         start_time=time.time()
         go=True
@@ -799,7 +799,7 @@ class Requestors(object):
         logger.debug("Wait evaluated: %s: waits: %s: found endless: %s" %(wait, len(waits), found_endless_waiter,))
         return wait
     
-    @Threaded()
+    @Threadit()
     def __collect_resources(self):
         wait=self.__evaluate_collect_wait_time()
         logger.debug("starting get loop (wait: %s, collect: %s)" %(wait,self.__collect_resources_started))

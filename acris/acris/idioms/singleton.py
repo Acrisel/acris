@@ -29,13 +29,9 @@ class SingletonType(type):
         Thread friendly Singleton construct
     '''
     __locker=Lock() 
-    #__instance = None
     __instance={}
     
-    #def __init__(self, name, bases, attrs):
-    #    super(SingletonType, self).__init__(name, bases, attrs)
-      
-    def __call__( self, name, *args, **kwargs):   
+    def __call__( self, name='', *args, **kwargs):   
         SingletonType.__locker.acquire()
         try:
             instance=self.__instance[name]
@@ -54,13 +50,9 @@ class NamedSingletonType(type):
         Thread friendly Singleton construct
     '''
     __locker=Lock() 
-    #__instance = None
     __instance={}
-    
-    #def __init__(self, name, bases, attrs):
-    #    super(SingletonType, self).__init__(name, bases, attrs)
       
-    def __call__( self, name, *args, **kwargs):   
+    def __call__( self, name='', *args, **kwargs):   
         NamedSingletonType.__locker.acquire()
         try:
             instance=self.__instance[name]
@@ -93,16 +85,16 @@ if __name__ == '__main__':
         
     
     s1=SingTest('S1', 55, a=23).load(1)
-    print(s1.get())
+    print('s1', s1.get())
     
     s2=SingTest('S2')
-    print(s2.get())
+    print('s2', s2.get())
     s2.load(2)
-    print(s2.get())
+    print('s2', s2.get())
     s2.load(3)
-    print(s2.get())
+    print('s2', s2.get())
     
-    print(s1.get())
+    print('s1', s1.get())
  
     class NamedSingTest(NamedSingleton):
         __data=None
@@ -122,16 +114,16 @@ if __name__ == '__main__':
         
     
     s1=NamedSingTest('S1', 55, a=23).load(1)
-    print('named', s1.name, s1.get())
+    print('s1', 'named', s1.name, s1.get())
     
     s2=NamedSingTest('S2')
-    print('named', s2.name, s2.get())
+    print('s2', 'named', s2.name, s2.get())
     s2.load(2)
-    print('named', s2.name, s2.get())
+    print('s2', 'named', s2.name, s2.get())
     s2.load(3)
-    print('named', s2.name, s2.get())
+    print('s2', 'named', s2.name, s2.get())
     
-    print('named', s1.name, s1.get())
+    print('s1', 'named', s1.name, s1.get())
 
     class Sequence(NamedSingleton):
         step_id=0

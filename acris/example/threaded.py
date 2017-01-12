@@ -21,11 +21,11 @@
 ##############################################################################
 
 
-from acris import threaded, RetriveAsycValue
+from acris import threadit, RetriveAsycValue
 from time import sleep
 
 class ThreadedExample(object):
-    @threaded
+    @threadit
     def proc(self, id_, num, stall):
         s=num
         while num > 0:

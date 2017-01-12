@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from acris.decorated_class import traced_method
+from acris import traced_method
 
 traced=traced_method(print)
 

@@ -102,3 +102,26 @@ class TracedMethod(object):
             return result
         return wrapper
 
+
+class LogCaller(object):
+    def __init__(self, msg='', logger=None):
+        self.msg=msg if not msg else "%s;" % msg
+        self.show=logger.debug if logger is not None else print
+        
+    def __call__(self, name, func=None):
+        (frame, filename, line_number,
+         function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        caller="%s.%s(%s)" % (filename, function_name, line_number)
+        
+        self.show("%s %s" % (self.msg, caller)) 
+        #print("Showing....", self.msg, caller)
+        if func==None:
+            method=name
+        else:
+            method=func
+        
+        @wraps(method)
+        def wrapper(*args, **kwargs):
+            result=method(*args, **kwargs)
+            return result
+        return wrapper

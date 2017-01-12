@@ -25,8 +25,9 @@ from logging.handlers import QueueListener, QueueHandler
 import os
 import multiprocessing as mp
 from copy import copy
-from acris.timed_sized_logging_handler import TimedSizedRotatingHandler
+from .timed_sized_logging_handler import TimedSizedRotatingHandler
 import datetime
+from datetime import datetime
 
 class MpQueueListener(QueueListener):
     def __init__(self, queue, *handlers):
@@ -68,15 +69,18 @@ class MpQueueListener(QueueListener):
             self.handlers.remove(hdlr)
             
 class MicrosecondsDatetimeFormatter(logging.Formatter):
-    converter=datetime.datetime.fromtimestamp
     def formatTime(self, record, datefmt=None):
-        #print('convert:', datefmt)
-        ct = self.converter(record.created)
-        if datefmt:
+        ct = datetime.fromtimestamp(record.created)
+        
+        if ct is  None:
+            ct=datetime.now()
+            
+        if datefmt is not None:
             s = ct.strftime(datefmt)
         else:
             t = ct.strftime("%Y-%m-%d %H:%M:%S")
             s = "%s.%03d" % (t, record.msecs)
+            
         return s
             
 class LevelBasedFormatter(logging.Formatter):
