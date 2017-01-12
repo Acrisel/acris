@@ -1,4 +1,4 @@
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 from .idioms.threaded import Threadit, RetriveAsycValue, threadit
 from .idioms.singleton import Singleton, NamedSingleton

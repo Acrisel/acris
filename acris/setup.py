@@ -70,6 +70,13 @@ if "install" in sys.argv:
             # command is run, so it's more likely to be seen.
             overlay_warning = True
             break
+        
+# Find all sub packages
+import os
+packages=list()
+for root, dirs, files in os.walk(PACKAGE, topdown=False):
+    if os.path.isfile(os.path.join(root,'__init__.py')):
+        packages.append(root)
 
 setup_info={'name': NAME,
  'version': VERSION,
@@ -80,7 +87,7 @@ setup_info={'name': NAME,
  'long_description': open("README.rst", "r").read(),
  'license': 'MIT',
  'keywords': 'library sequence logger yield singleton thread synchronize resource pool utilities os ssh xml excel mail',
- 'packages': [PACKAGE],
+ 'packages': packages,
  'install_requires': ['pexpect', 'openpyxl'],
  'extras_require': {'dev': [], 'test': []},
  'classifiers': ['Development Status :: 5 - Production/Stable',
