@@ -23,7 +23,7 @@
 from .singleton import NamedSingleton
 from .sequence import Sequence
 from .data_types import MergedChainedDict
-from .threaded import Threadit
+from .threaded import Threaded
 import threading
 from abc import abstractmethod
 from collections import OrderedDict
@@ -195,7 +195,7 @@ class ResourcePool(NamedSingleton):
         del self.__reserved[ticket]
         if sync: self.__sync_release()
     
-    @Threadit()
+    @Threaded()
     def __wait_on_condition_callback(self, condition, seconds, ticket, callback):
         try:
             with condition:
@@ -530,7 +530,7 @@ class Requestor(object):
         else:
             self.__notify_collected()
     
-    @Threadit()
+    @Threaded()
     def __collect_resources(self):
         start_time=time.time()
         go=True
@@ -799,7 +799,7 @@ class Requestors(object):
         logger.debug("Wait evaluated: %s: waits: %s: found endless: %s" %(wait, len(waits), found_endless_waiter,))
         return wait
     
-    @Threadit()
+    @Threaded()
     def __collect_resources(self):
         wait=self.__evaluate_collect_wait_time()
         logger.debug("starting get loop (wait: %s, collect: %s)" %(wait,self.__collect_resources_started))

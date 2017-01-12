@@ -22,7 +22,7 @@
 
 import time
 from acris import virtual_resource_pool as rp
-from acris import Threadit
+from acris import Threaded
 from acris import create_stream_handler
 import queue
 from datetime import datetime
@@ -48,7 +48,7 @@ class Callback(object):
         
 requestors=rp.Requestors()
 
-@Threadit()
+@Threaded()
 def worker_callback(name, rps):
     print('[ %s ] %s getting resource' % (str(datetime.now()), name))
     notify_queue=queue.Queue()
@@ -73,7 +73,7 @@ def worker_callback(name, rps):
 
 # This has high potential to lock!!!!
 
-r1=worker_callback('>>> r1', [(rp1,2), (rp2,1)])    
+r1=worker_callback('>>> r1', [(rp1,1), (rp2,1)])    
 r2=worker_callback('>>> r2', [(rp1,1),])    
 r3=worker_callback('>>> r3', [(rp1,1), (rp2,1)])    
 r4=worker_callback('>>> r4', [(rp1,1),]) 

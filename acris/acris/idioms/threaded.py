@@ -26,7 +26,7 @@ About
 :synopsis:     threaded provides decorator for class methods to run via a thread
 :moduleauthor: Arnon Sela
 :date:         2016/10/28
-:description:  a method decorated with @threadit would run in a separated thread. this work 
+:description:  a method decorated with @threaded would run in a separated thread. this work 
    
 :comment: based on http://code.activestate.com/recipes/576684-simple-threading-decorator/
 
@@ -130,7 +130,7 @@ def traces(trace, start=0, end=None):
     result=[ "File \"%s\", line %s, in %s\n    %s" % (frame.filename, frame.lineno, frame.function, frame.code_context[0].rstrip()) for frame in trace]
     return result
    
-def threadit(method): 
+def threaded(method): 
     @wraps(method)
     def wrapper(*args, **kwargs): 
         async_result = AsyncResult() 
@@ -148,7 +148,7 @@ def threadit(method):
     return wrapper
 
 
-class Threadit(object):
+class Threaded(object):
     def __init__(self, log=True):
         self.log=log
         
