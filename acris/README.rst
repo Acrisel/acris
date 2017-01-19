@@ -30,7 +30,7 @@ Overview
 Programming Idoms
 =================
 
-threaded
+threadit
 --------
 
     decorator for methods that can be executed as a thread.  
@@ -40,11 +40,11 @@ example
 
     .. code-block:: python
 
-        from acris import threaded
+        from acris import threadit
         from time import sleep
 
         class ThreadedExample(object):
-            @threaded
+            @threadit
             def proc(self, id_, num, stall):
                 s=num
                 while num > 0:

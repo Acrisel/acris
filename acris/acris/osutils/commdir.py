@@ -184,7 +184,7 @@ def commdir(dir1, dir2, ignore=[], detailed=False, followlinks=False, quiet=Fals
                             folders_only_in_dir2=folders_only_in_2,
                             files_only_in_dir1=files_only_in_1, 
                             files_only_in_dir2=files_only_in_2,
-                            diff_files=[x[0] for x in diff_files], 
+                            diff_files=[x[0] for x in files_diff], 
                             diff_detail=diff_detail)
         return content
 
@@ -222,7 +222,7 @@ def reduce_folder(folders, top=True):
     to_folders.append(current_prefix)
     return sorted(set(to_folders))
         
-def sync_dirs(loc, missing_folders, cmd="mkdir -fp", msg="Create missing folders", quiet=False, top=True):    
+def sync_dirs(loc, missing_folders, cmd="mkdir -p", msg="Create missing folders", quiet=False, top=True):    
     if len(missing_folders) > 0:
         if not quiet: print_block('%s %s:' % (msg, loc,), top_sep='-')
         missing_folders=reduce_folder(missing_folders, top=top)
