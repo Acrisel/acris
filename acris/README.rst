@@ -660,8 +660,8 @@ Example Output
 Utilities
 =========
 
-commdir
--------
+commdir.py
+----------
 
     .. code-block:: python
 
@@ -762,3 +762,130 @@ commdir example output
           Folders only in other_folder: 4
           Files only in other_folder: 7
           Files different: 4
+          
+bee.py
+------
+
+    utility to run commands on multiple hosts and collect responses.
+
+    .. code-block :: python
+
+        usage: bee.py [-h] -c COMMAND [-p PARALLEL] -t HOST [-u USERNAME]
+                      [--sudo-user USERNAME] [--keep-log]
+
+        Sends ssh command to multiple destinations.
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -c COMMAND, --command COMMAND
+                                command to execute over ssh channel
+          -p PARALLEL, --parallel PARALLEL
+                                number of parallel session to open
+          -t HOST, --target HOST
+                                destination host to run against
+          -u USERNAME, --user USERNAME
+                                user to use for ssh authentication
+          --sudo-user USERNAME  sudo user to use to run commands
+          --keep-log            indicates bee to keep host logs instead of deleting
+    
+csv2xlsx.py
+-----------
+    
+    converts multiple CSV file to XLSX file. Each CSV file will end on its own sheet.
+    
+    .. code-block :: python
+    
+        usage: csv2xlsx.py [-h] [-d DELIMITER] [-o OUTFILE] CSV [CSV ...]
+
+        Creates Excel file from one or more CSV files. If multiple CSV are provided,
+        they wiull be mapped to separated sheets. If "-" is provided, input will be
+        acquire from stdin.
+
+        positional arguments:
+          CSV                   csv files to merge in xlsx; if -, stdin is assumed
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -d DELIMITER, --delimiter DELIMITER
+                                select delimiter character
+          -o OUTFILE, --out OUTFILE
+                                output xlsx filename
+                                
+mail.py
+-------
+
+    send mail utility and function API
+
+    .. code-block :: python
+
+        usage: mail.py [-h] [-a ATTACHMENT] [-o FILE] -s SUBJECT [-b BODY]
+                       [-f MAILFROM] [-c CC] -t RECIPIENT
+
+        Send the contents of a directory as a MIME message. Unless the -o option is
+        given, the email is sent by forwarding to your local SMTP server, which then
+        does the normal delivery process. Your local machine must be running an SMTP
+        server.
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -a ATTACHMENT, --attach ATTACHMENT
+                                Mail the contents of the specified directory or file,
+                                Only the regular files in the directory are sent, and
+                                we don't recurse to subdirectories.
+          -o FILE, --output FILE
+                                Print the composed message to FILE instead of sending
+                                the message to the SMTP server.
+          -s SUBJECT, --subject SUBJECT
+                                Subject for email message (required).
+          -b BODY, --body BODY  Boby text for the message (optional).
+          -f MAILFROM, --mailfrom MAILFROM
+                                The value of the From: header (optional); if not
+                                provided $USER@$HOSTNAME will be use as sender
+          -c CC, --malicc CC    The value of the CC: header (optional)
+          -t RECIPIENT, --mailto RECIPIENT
+                                A To: header value (at least one required)
+                                
+prettyxml.py
+------------
+
+    Reformat XML in hierarchical structure.
+
+    .. code-block :: python
+    
+        usage: pretty-xml.py [-h] [-o OUTFILE] [XML [XML ...]]
+
+        Pretty prints XML file that is not pretty.
+
+        positional arguments:
+          XML                   XML files to pretty print; if - or none provided,
+                                stdin is assumed
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -o OUTFILE, --out OUTFILE
+                                output filename; defaults to stdout
+
+sshcmd
+------
+
+    Runs single shh command on remote host
+
+    .. code-block :: pyhton
+    
+        def sshcmd(cmd, host, password,)
+        
+        Args:
+            cmd: command to execute
+            host: remote host to run on
+            password: user's password on remote host
+        
+touch
+-----
+
+    UNIX like touch with ability to create missing folders.
+
+    touch(path, dirs=False)
+    
+    Args:
+        path: to touch
+        dirs: if set, create missing folders
