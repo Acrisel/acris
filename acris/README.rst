@@ -311,6 +311,56 @@ Example output
         [ 2016-12-19,11:39:45.258794 ][ INFO ][ proc [932]: 0/1 - sleep  0.3sec ]
         [ 2016-12-19,11:39:45.707914 ][ INFO ][ proc [931]: 0/1 - sleep 0.75sec ]
         [ 2016-12-19,11:39:45.710487 ][ DEBUG ][ sub processes completed ][ mplogger.<module>(56) ]
+        
+Decorators
+----------
+
+    Useful decorators for production and debug.
+    
+traced_method
+~~~~~~~~~~~~~
+
+    logs entry and exit of function or method.
+    
+    .. code-block :: python
+    
+        from acris import traced_method
+
+        traced=traced_method(print, print_args=True, print_result=True)
+
+        class Oper(object):
+            def __init__(self, value):
+                self.value=value
+        
+            def __repr__(self):
+                return str(self.value)
+        
+            @traced
+            def mul(self, value):
+                self.value*=value 
+                return self   
+    
+            @traced
+            def add(self, value):
+                self.value+=value
+                return self
+    
+        o=Oper(3)
+        print(o.add(2).mul(5).add(7).mul(8))
+        
+    would result with the following output:
+    
+    .. code-block :: python
+        
+        [ add ][ entering][ args: (3, 2) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
+        [ add ][ exiting ] [ time span: 0:00:00.000056][ result: 5 ][ trace_methods.py.Oper(39) ]
+        [ mul ][ entering][ args: (5, 5) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
+        [ mul ][ exiting ] [ time span: 0:00:00.000010][ result: 25 ][ trace_methods.py.Oper(34) ]
+        [ add ][ entering][ args: (25, 7) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
+        [ add ][ exiting ] [ time span: 0:00:00.000007][ result: 32 ][ trace_methods.py.Oper(39) ]
+        [ mul ][ entering][ args: (32, 8) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
+        [ mul ][ exiting ] [ time span: 0:00:00.000008][ result: 256 ][ trace_methods.py.Oper(34) ]
+        256
 	
 Data Types
 ----------
@@ -870,7 +920,7 @@ sshcmd
 
     Runs single shh command on remote host
 
-    .. code-block :: pyhton
+    .. code-block :: python
     
         def sshcmd(cmd, host, password,)
         
@@ -884,8 +934,11 @@ touch
 
     UNIX like touch with ability to create missing folders.
 
-    touch(path, dirs=False)
-    
-    Args:
-        path: to touch
-        dirs: if set, create missing folders
+    .. code-block :: python
+
+        touch(path, dirs=False)
+        
+        Args:
+            path: to touch
+            dirs: if set, create missing folders
+

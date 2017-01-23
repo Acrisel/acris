@@ -22,7 +22,7 @@
 
 from acris import traced_method
 
-traced=traced_method(print)
+traced=traced_method(print, print_args=True, print_result=True)
 
 class Oper(object):
     def __init__(self, value):

@@ -32,7 +32,17 @@ def dont_decorate(f):
     f.decorate = False
     return f
 
-def traced_method(print_func=None, print_args=False):
+def traced_method(print_func=None, print_args=False, print_result=False):
+    ''' provides decorator for method or function to log entry and exit
+    
+    Args:
+        print_func: method to use to print information. defaults to print_func
+        print_args: if set, would add representation of arguments
+        print_result: if set, would add representation of returned value
+        
+    Returns:
+        decorator
+    '''
     def print_method_name(name, f=None):
         (frame, filename, line_number,
          function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
@@ -47,7 +57,7 @@ def traced_method(print_func=None, print_args=False):
         def wrapper(*args, **kwargs):
             
             start=datetime.datetime.now()
-            func_args=''
+            func_args=func_result=''
             if print_args:
                 func_args="[ args: %s ][ kwargs: %s ]" % (args, kwargs)
             if print_func:
@@ -57,10 +67,12 @@ def traced_method(print_func=None, print_args=False):
             #print_func('Result: %s' % (repr(result),))
             #print(str(result))
             finish=datetime.datetime.now()
+            if print_result:
+                func_result="[ result: %s ]" % repr(result)
             if print_func:
                 #print_func('Result: %s' % (repr(result),))
                 #print_func('[ %s ][ %s ][ exiting ] [ time span: %s][ %s ]' % (str(finish), text_id, str(finish-start), caller))
-                print_func('[ %s ][ exiting ] [ time span: %s][ %s ]' % (text_id, str(finish-start), caller))
+                print_func('[ %s ][ exiting ] [ time span: %s]%s[ %s ]' % (text_id, str(finish-start), func_result, caller))
             return result
         return wrapper
     return print_method_name
