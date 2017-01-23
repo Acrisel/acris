@@ -352,13 +352,13 @@ traced_method
     
     .. code-block :: python
         
-        [ add ][ entering][ args: (3, 2) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
+        [ add ][ entering][ args: (2) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
         [ add ][ exiting ] [ time span: 0:00:00.000056][ result: 5 ][ trace_methods.py.Oper(39) ]
-        [ mul ][ entering][ args: (5, 5) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
+        [ mul ][ entering][ args: (5) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
         [ mul ][ exiting ] [ time span: 0:00:00.000010][ result: 25 ][ trace_methods.py.Oper(34) ]
-        [ add ][ entering][ args: (25, 7) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
+        [ add ][ entering][ args: (7) ][ kwargs: {} ][ trace_methods.py.Oper(39) ]
         [ add ][ exiting ] [ time span: 0:00:00.000007][ result: 32 ][ trace_methods.py.Oper(39) ]
-        [ mul ][ entering][ args: (32, 8) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
+        [ mul ][ entering][ args: (8) ][ kwargs: {} ][ trace_methods.py.Oper(34) ]
         [ mul ][ exiting ] [ time span: 0:00:00.000008][ result: 256 ][ trace_methods.py.Oper(34) ]
         256
 	

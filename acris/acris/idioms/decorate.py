@@ -47,19 +47,22 @@ def traced_method(print_func=None, print_args=False, print_result=False):
         (frame, filename, line_number,
          function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
         caller="%s.%s(%s)" % (filename, function_name, line_number)
-        if f==None :
+        if f is None :
             text_id='%s' % (name.__name__)
             method=name
+            is_method=True
         else:
             text_id='%s.%s' % (name, f.__name__, )
             method=f
+            is_method=False
             
         def wrapper(*args, **kwargs):
             
             start=datetime.datetime.now()
             func_args=func_result=''
             if print_args:
-                func_args="[ args: %s ][ kwargs: %s ]" % (args, kwargs)
+                show_args=args if not is_method else args[1:]
+                func_args="[ args: %s ][ kwargs: %s ]" % (show_args, kwargs)
             if print_func:
                 #print_func('[ %s ][ %s ][ entering]%s[ %s ]' % (str(start), text_id, func_args,caller))
                 print_func('[ %s ][ entering]%s[ %s ]' % (text_id, func_args,caller))
@@ -82,7 +85,7 @@ class TracedMethod(object):
         self.print_func=print_func
         self.print_args=print_args
         
-    def __call__(self,name, f=None):
+    def __call__(self, name, f=None):
         (frame, filename, line_number,
          function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
         caller="%s.%s(%s)" % (filename, function_name, line_number)
@@ -113,7 +116,6 @@ class TracedMethod(object):
                 self.print_func('[ %s ][ exiting ] [ time span: %s][ %s ]' % (text_id, str(finish-start), caller))
             return result
         return wrapper
-
 
 class LogCaller(object):
     def __init__(self, msg='', logger=None):
