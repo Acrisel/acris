@@ -256,9 +256,9 @@ def show_sync_cmd(dir1, dir2, content, merge=False, quiet=False):
     
     sync_dirs(dir2, folders_only_in_dir1, cmd="mkdir -fp", msg="Create missing folders", quiet=quiet, top=False)
     if merge: 
-        sync_dirs(dir1, folders_only_in_dir2, cmd="rmdir -fr", msg="Remove extra folders", quiet=quiet, top=True)
+        sync_dirs(dir1, folders_only_in_dir2, cmd="rm -fr", msg="Remove extra folders", quiet=quiet, top=True)
     else:
-        sync_dirs(dir2, folders_only_in_dir2, cmd="rmdir -fr", msg="Remove extra folders", quiet=quiet, top=True)
+        sync_dirs(dir2, folders_only_in_dir2, cmd="rm -fr", msg="Remove extra folders", quiet=quiet, top=True)
     
     sync_files(dir1, dir2, files_only_in_dir1, quiet=quiet)
     if merge: 
