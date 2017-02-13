@@ -24,12 +24,14 @@ def sshcmd(cmd, host, password,):
         print('Not expected')
 
 
-def touch(path, dirs=False):
+def touch(path, times=None, dirs=False):
     ''' perform UNIX touch with extra
         based on: http://stackoverflow.com/questions/12654772/create-empty-file-using-python
         
     Args:
         path: file path to touch
+        times: a 2-tuple of the form (atime, mtime) where each member is an int or float expressing seconds.
+            defaults to current time.
         dirs: is set, create folders if not exists 
     '''
     
@@ -39,4 +41,4 @@ def touch(path, dirs=False):
             os.makedirs(basedir)
             
     with open(path, 'a'):
-        os.utime(path, None)
+        os.utime(path, times=times)

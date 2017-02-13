@@ -936,9 +936,11 @@ touch
 
     .. code-block :: python
 
-        touch(path, dirs=False)
+        touch(path, times=None, dirs=False)
         
         Args:
             path: to touch
+            times: a 2-tuple of the form (atime, mtime) where each member is an int or float expressing seconds.
+                   defaults to current time.
             dirs: if set, create missing folders
 

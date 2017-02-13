@@ -50,7 +50,11 @@ URL is the URL for the project. This URL may be a project website, the Github re
 or whatever URL you want. Again, this information is optional.
 '''
 URL = 'https://github.com/Acrisel/acris'
-VERSION =__import__(PACKAGE).__version__
+
+version_file=os.path.join(PACKAGE, 'VERSION.py')
+with open(version_file, 'r') as vf:
+    vline=vf.read()
+VERSION = vline.strip().partition('=')[2].replace("'", "")
 
 # Warn if we are installing over top of an existing installation. This can
 # cause issues where files that were deleted from a more recent Accord are
@@ -71,6 +75,11 @@ if "install" in sys.argv:
             overlay_warning = True
             break
         
+scripts=['acris/osutils/commdir.py', 
+         'acris/osutils/bee.py', 
+         'acris/osutils/csv2xlsx.py', 
+         'acris/osutils/prettyxml.py', ]
+        
 # Find all sub packages
 import os
 packages=list()
@@ -88,6 +97,7 @@ setup_info={'name': NAME,
  'license': 'MIT',
  'keywords': 'library sequence logger yield singleton thread synchronize resource pool utilities os ssh xml excel mail',
  'packages': packages,
+ 'scripts' : scripts,
  'install_requires': ['pexpect', 'openpyxl'],
  'extras_require': {'dev': [], 'test': []},
  'classifiers': ['Development Status :: 5 - Production/Stable',

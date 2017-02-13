@@ -10,6 +10,7 @@ encoding//acris/idioms/synchronize.py=utf-8
 encoding//acris/idioms/threaded.py=utf-8
 encoding//acris/idioms/timed_sized_logging_handler.py=utf-8
 encoding//acris/idioms/virtual_resource_pool.py=utf-8
+encoding//acris/misc/msort.py=utf-8
 encoding//acris/osutils/bee.py=utf-8
 encoding//acris/osutils/commdir.py=utf-8
 encoding//acris/osutils/csv2xlsx.py=utf-8

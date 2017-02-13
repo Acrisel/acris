@@ -1,4 +1,4 @@
-__version__ = "2.1.3"
+__version__ = "2.1.5"
 
 from .idioms.threaded import Threaded, RetriveAsycValue, threaded
 from .idioms.singleton import Singleton, NamedSingleton
@@ -13,3 +13,4 @@ from acris.idioms.synchronize import Synchronization, SynchronizeAll, dont_synch
 from acris.idioms import synchronize
 from .idioms.mediator import Mediator
 from acris.idioms.decorate import traced_method
+from acris.misc.msort  import msort
