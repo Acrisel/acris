@@ -1,4 +1,4 @@
-__version__ = "2.1.5"
+from .VERSION import __version__
 
 from .idioms.threaded import Threaded, RetriveAsycValue, threaded
 from .idioms.singleton import Singleton, NamedSingleton
