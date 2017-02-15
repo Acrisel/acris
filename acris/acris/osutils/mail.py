@@ -28,6 +28,7 @@ import sys
 import smtplib
 # For guessing MIME type based on file name extension
 import mimetypes
+from contextlib import contextmanager
 
 from argparse import ArgumentParser
 
@@ -71,29 +72,88 @@ def attach(outer, path):
     msg.add_header('Content-Disposition', 'attachment', filename=path)
     outer.attach(msg)
 
+@contextmanager
+def activate(connection):
+    protocol=connection.get('protocol', '')
+    host=connection.get('host', os.environ.get('SMTP_HOST', 'localhost'))
+    port=connection.get('port', int(os.environ.get('SMTP_PORT', '0')))
+    username=connection.get('username', os.environ.get('SMTP_USERNAME', os.environ.get('USER')))
+    password=connection.get('password', os.environ.get('SMTP_PASSWORD', ''))
+    
+    if not protocol:
+        from smtplib import SMTP as SMTP
+    elif protocol=='ssl':
+        from smtplib import SMTP_SSL as SMTP
+    else:
+        raise Exception("Unknown protocol: 's'" % (protocol,))
+    
+    smtp_params={'host': host}
+    if port:
+        smtp_params['port']=port
+    elif not protocol:
+        smtp_params['port']=110
+    elif protocol=='ssl':
+        smtp_params['port']=465
+    
+    try:
+        smtp_srv = SMTP(**smtp_params)
+    except Exception as err:
+        raise Exception('Failed to initiate SMTP: {}; SMTP PARAMS: {}'.format(repr(err), repr(smtp_params)))
 
-def send_mail(mailto, subject, body='', mailfrom=[], mailcc=[], attachments=[], output=''):
+    if protocol == 'ssl':
+        try:
+            smtp_srv.login(username, password)
+        except Exception as err:
+            smtp_srv.close()
+            raise Exception("Failed to login to SMTP server: {}: {}".format(username, repr(err)))
+
+    yield smtp_srv
+    smtp_srv.close()
+
+
+def send_mail(mailto, subject, body='', mailfrom=None, mailcc=[], mailbcc=[], attachments=[], output='', connection={}):
+    ''' sends mail with attachements
+        
+        Args:
+        mailto: (list) of email addresses
+        subject: (str) text of email subject
+        body: (str) text of email body; default empty text
+        mailfrom: (list) email address to use as from address; default to ${USER}@${HOST}
+        mailcc: (list) addresses to send carbon copy to
+        mailbcc: (list) addresses to send blind carbon copy to
+        attachments: (list) path to files to attach to mail
+        output: (str) path to wrtie email format to instead of sending
+        connection: (dict) connection settings to use when sending email it should have the following keys:
+            'protocol': 'ssl', regular SMTP will be used if not provided.
+            'username': name to use to login to SMPT server. $SMTP_USERNAME or $USER is used if not provided.
+            'password': password to use to connect to to SMTP server. $SMTP_PASSWORD if not provided.
+            'host': (str) url of SMTP server. SMTP_HOST or local host is used if not provided.
+            'port': (int) port number to use.  defaults to SMTP_PORT or 110 for SMTP and 465 for SSL
+        
+        '''
     
     # Create the enclosing (outer) message
     outer = MIMEMultipart()
     if not subject:
         subject = 'Content of directory'
-        
+    
     outer['Subject'] = subject
     if mailcc:
-      outer['Cc'] = COMMASPACE.join(mailcc)
-      
+        outer['Cc'] = COMMASPACE.join(mailcc)
+    if mailbcc:
+        outer['BCc'] = COMMASPACE.join(mailbcc)
+
     outer['To'] = COMMASPACE.join(mailto)
-    
-    if not mailfrom:
+
+    if mailfrom is None:
         mailfrom="{}@{}".format(os.environ['USER'], os.environ['HOSTNAME'])
     outer['From'] = mailfrom
 
     outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
     if body:
         outer.attach(MIMEText(body))
-        
-    for attachment in attachments: 
+
+    for attachment in attachments:
         if not os.path.isfile(attachment):
             for filename in os.listdir(attachment):
                 path = os.path.join(attachment, filename)
@@ -102,42 +162,41 @@ def send_mail(mailto, subject, body='', mailfrom=[], mailcc=[], attachments=[], 
                 attach(outer, path)
         else:
             attach(outer, attachment)
-        
     # Now send or store the message
     composed = outer.as_string()
     if output:
         with open(output, 'w') as fp:
             fp.write(composed)
     else:
-        with smtplib.SMTP('localhost') as s:
+        with activate(connection) as s:
             s.send_message(outer)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="""\
-Send the contents of a directory as a MIME message.
-Unless the -o option is given, the email is sent by forwarding to your local
-SMTP server, which then does the normal delivery process.  Your local machine
-must be running an SMTP server.
-""")
-    parser.add_argument('-a', '--attach', required=False, 
+        Send the contents of a directory as a MIME message.
+        Unless the -o option is given, the email is sent by forwarding to your local
+        SMTP server, which then does the normal delivery process.  Your local machine
+        must be running an SMTP server.
+        """)
+    parser.add_argument('-a', '--attach', required=False,
                         action='append', metavar='ATTACHMENT', default=[], dest='attachments',
                         help="""Mail the contents of the specified directory or file, Only the regular
-                        files in the directory are sent, and we don't recurse to
-                        subdirectories.""")
+                            files in the directory are sent, and we don't recurse to
+                            subdirectories.""")
     parser.add_argument('-o', '--output', metavar='FILE',
                         help="""Print the composed message to FILE instead of
-                        sending the message to the SMTP server.""")
-    parser.add_argument('-s', '--subject', metavar='SUBJECT', required=True, 
+                            sending the message to the SMTP server.""")
+    parser.add_argument('-s', '--subject', metavar='SUBJECT', required=True,
                         help="""Subject for email message (required).""")
     parser.add_argument('-b', '--body', metavar='BODY', required=False,
                         help="""Boby text for the message (optional).""")
     parser.add_argument('-f', '--mailfrom', required=False,
                         help='The value of the From: header (optional); if not provided $USER@$HOSTNAME will be use as sender')
     parser.add_argument('-c', '--malicc', required=False,
-                        help='The value of the CC: header (optional)', action='append', metavar='CC', 
-                        default=[], dest='mailcc')
-    parser.add_argument('-t', '--mailto', required=True, 
+                        help='The value of the CC: header (optional)', action='append', metavar='CC',
+                                            default=[], dest='mailcc')
+    parser.add_argument('-t', '--mailto', required=True,
                         action='append', metavar='RECIPIENT',
                         default=[], dest='mailto',
                         help='A To: header value (at least one required)')
