@@ -146,7 +146,7 @@ def send_mail(mailto, subject, body='', mailfrom=None, mailcc=[], mailbcc=[], at
     outer['To'] = COMMASPACE.join(mailto)
 
     if mailfrom is None:
-        mailfrom="{}@{}".format(os.environ['USER'], os.environ['HOSTNAME'])
+        mailfrom="{}@{}".format(os.environ['USER'], os.environ['HOST'])
     outer['From'] = mailfrom
 
     outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
@@ -171,6 +171,36 @@ def send_mail(mailto, subject, body='', mailfrom=None, mailcc=[], mailbcc=[], at
         with activate(connection) as s:
             s.send_message(outer)
 
+def get_connection(ssl=False, connection=None):
+    '''
+        'protocol': 'ssl', regular SMTP will be used if not provided.
+        'username': name to use to login to SMPT server. $SMTP_USERNAME or $USER is used if not provided.
+        'password': password to use to connect to to SMTP server. $SMTP_PASSWORD if not provided.
+        'host': (str) url of SMTP server. SMTP_HOST or local host is used if not provided.
+        'port': (int) port number to use.  defaults to SMTP_PORT or 110 for SMTP and 465 for SSL
+
+    '''
+    result=dict()
+    
+    if ssl:
+        result['protocol']='ssl'
+    
+    if connection:
+        'user:pass@host:port'
+        mparts=connection.rpartition('@')
+        if mparts[0]:
+            parts=mparts[0].partition(':')
+            if parts[0]:
+                result['username']=parts[0]
+            if parts[2]:
+                result['password']=parts[2]
+        if mparts[2]:
+            parts=mparts[2].partition(':')
+            if parts[0]:
+                result['host']=parts[0]
+            if parts[2]:
+                result['port']=parts[2]
+    return result
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="""\
@@ -199,6 +229,14 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--mailto', required=True,
                         action='append', metavar='RECIPIENT',
                         default=[], dest='mailto',
-                        help='A To: header value (at least one required)')
+                        help='A To: header value (at least one required)')    
+    parser.add_argument('--ssl', action='store_true', dest='ssl',
+                        help="""Sets mail to use SSL protocol""")
+
+    parser.add_argument('-C', '--connection', metavar='CONNECTION', dest='connection',
+                        help="""provide connection URI: [user[:pass]][@[host[:port]]]""")
+
     args = parser.parse_args()
-    send_mail(subject=args.subject, body=args.body, mailto=args.mailto, mailcc=args.mailcc, attachments=args.attachments, output=args.output)
+    
+    connection=get_connection(args.ssl, args.connection)
+    send_mail(subject=args.subject, body=args.body, mailfrom=args.mailfrom, mailto=args.mailto, mailcc=args.mailcc, attachments=args.attachments, output=args.output, connection=connection)
