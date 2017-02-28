@@ -86,8 +86,8 @@ class MicrosecondsDatetimeFormatter(logging.Formatter):
 class LevelBasedFormatter(logging.Formatter):
     
     defaults={
-        logging.DEBUG : "%(asctime)-15s: %(levelname)-7s: %(message)s: %(module)s.%(funcName)s(%(lineno)d)",
-        'default' : "%(asctime)-15s: %(levelname)-7s: %(message)s",
+        logging.DEBUG : u"%(asctime)-15s: %(levelname)-7s: %(message)s: %(module)s.%(funcName)s(%(lineno)d)",
+        'default' : u"%(asctime)-15s: %(levelname)-7s: %(message)s",
         }
  
     def __init__(self, level_formats={}, datefmt=None):
@@ -115,7 +115,7 @@ def create_stream_handler(logging_level=logging.INFO, level_formats={}, datefmt=
 
 class MpLogger(object):
     
-    def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, datefmt=None, logging_root=None):
+    def __init__(self, logdir=None, logging_level=logging.INFO, level_formats={}, datefmt=None, logging_root=None, handlers=[]):
         self.logdir=logdir
         self.logging_level=logging_level
         self.level_formats=level_formats
@@ -124,6 +124,7 @@ class MpLogger(object):
         self.logging_root=logging_root
         self.logger_initialized=False
         self.queue_listener=None
+        self.handlers=handlers
 
     def start(self, ):
         ''' starts logger for multiprocessing using queue.
@@ -147,30 +148,30 @@ class MpLogger(object):
         logger.addHandler(queue_handler)
         
         self.queue_listener = MpQueueListener(q,)
-        
-        handler=create_stream_handler(logging_level=self.logging_level, level_formats=self.level_formats, datefmt=self.datefmt)
-        #handler = logging.StreamHandler()
-        #handler.setLevel(self.logging_level)
-        #formatter = self.record_formatter 
-        #handler.setFormatter(formatter)
-
-        self.queue_listener.addHandler(handler)
     
-        if self.logdir:
-            # create error file handler and set level to error
-            handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "error.log"), encoding=None, delay="true")
-            handler.setLevel(logging.ERROR)
-            formatter = self.record_formatter 
-            handler.setFormatter(formatter)
+        if len(self.handlers) == 0:
+            handler=create_stream_handler(logging_level=self.logging_level, level_formats=self.level_formats, datefmt=self.datefmt)
             self.queue_listener.addHandler(handler)
-         
-            # create debug file handler and set level to debug
-            handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "debug.log"), )
-            handler.setLevel(logging.DEBUG)
-            formatter = self.record_formatter 
-            handler.setFormatter(formatter)
-
-            self.queue_listener.addHandler(handler)
+            
+            if self.logdir:
+                # create error file handler and set level to error
+                handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "error.log"), encoding=None, delay="true")
+                handler.setLevel(logging.ERROR)
+                formatter = self.record_formatter 
+                handler.setFormatter(formatter)
+                self.queue_listener.addHandler(handler)
+             
+                # create debug file handler and set level to debug
+                handler = TimedSizedRotatingHandler(filename=os.path.join(self.logdir, "debug.log"), )
+                handler.setLevel(logging.DEBUG)
+                formatter = self.record_formatter 
+                handler.setFormatter(formatter)
+    
+                self.queue_listener.addHandler(handler)
+            
+        else: # len(self.handlers) > 0:
+            for handler in self.handlers:
+                self.queue_listener.addHandler(handler)
             
         self.queue_listener.start()
         

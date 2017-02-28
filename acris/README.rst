@@ -944,3 +944,14 @@ touch
                    defaults to current time.
             dirs: if set, create missing folders
 
+
+Misc
+====
+
+camel2snake and snake2camel
+---------------------------
+
+    camel2snake(name) and snake2camel(name) will convert name from camel to snake and from snake to camel respectively.
+     
+     
+     

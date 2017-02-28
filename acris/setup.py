@@ -78,7 +78,8 @@ if "install" in sys.argv:
 scripts=['acris/osutils/commdir.py', 
          'acris/osutils/bee.py', 
          'acris/osutils/csv2xlsx.py', 
-         'acris/osutils/prettyxml.py', ]
+         'acris/osutils/prettyxml.py', 
+         'acris/osutils/mail.py', ]
         
 # Find all sub packages
 import os
