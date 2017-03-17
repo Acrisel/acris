@@ -43,8 +43,21 @@ def snake2camel(name, capitalize=True):
     return result   
 
 if __name__ == '__main__':
-    names=['CamelCase', 'CamelCamelCase', 'Camel2Camel2Case', 'getHTTPResponseCode', 'get2HTTPResponseCode', 'HTTPResponseCode', 'HTTPResponseCodeXYZ']
-    for name in names:
+    cnames=['CamelCase', 'CamelCamelCase', 'Camel2Camel2Case', 'getHTTPResponseCode', 'get2HTTPResponseCode', 'HTTPResponseCode', 'HTTPResponseCodeXYZ']
+    snames=['camel_case', 'camel_camel_case_1', 'camel2_camel2_case', 'get_HTTP_response_code', 'get2_HTTP_response_code', 'HTTP_response_code', 'HTTP_response_code_XYZ']
+
+    for name in snames:
+        v=snake2camel(name)
+        V=camel2snake(v)
+        print(name, v, V)
+    print('-----------------')    
+    for name in snames:
         v=camel2snake(name)
         V=snake2camel(v)
-        print(V, v)
+        print(name, v, V)
+    print('-----------------')  
+    a="item_b_1"
+    b=snake2camel(a,)
+    print(b)
+    c=snake2camel(b,)
+    print(c)

@@ -24,28 +24,36 @@ import time
 import random
 import logging
 from acris import MpLogger
-import os
 import multiprocessing as mp
+import os
 
 logger=logging.getLogger(__name__)
 
+
 def subproc(limit=1):
+    
     for i in range(limit):
         sleep_time=3/random.randint(1,10)
         time.sleep(sleep_time)
-        logger.info("proc [%s]: %s/%s - sleep %4.4ssec" % (os.getpid(), i, limit, sleep_time))
+        logger.info("%s/%s - sleep %4.4ssec" % (i, limit, sleep_time))
 
-level_formats={logging.DEBUG:"[ %(asctime)s ][ %(levelname)s ][ %(message)s ][ %(module)s.%(funcName)s(%(lineno)d) ]",
-                'default':   "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]",
+level_formats={logging.DEBUG:"[ %(asctime)-26s ][ %(processName)-11s ][ %(levelname)-7s ][ %(message)s ][ %(module)s.%(funcName)s(%(lineno)d) ]",
+                'default':   "[ %(asctime)-26s ][ %(processName)-11s ][ %(levelname)-7s ][ %(message)s ]",
                 }
-    
+
+logdir=os.getcwd()
+#mplogger=MpLogger(name='mplogger', logdir=logdir, logging_level=logging.DEBUG, level_formats=level_formats, datefmt='%Y-%m-%d,%H:%M:%S.%f', 
+#                  process_key=['processName'], console=True, force_global=True)
 mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats, datefmt='%Y-%m-%d,%H:%M:%S.%f')
 mplogger.start()
 
 logger.debug("starting sub processes")
 procs=list()
+seq=0
 for limit in [1, 1]:
+    seq+=1
     proc=mp.Process(target=subproc, args=(limit, ))
+    #proc.name='subproc-%s' % seq
     procs.append(proc)
     proc.start()
     

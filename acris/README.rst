@@ -954,4 +954,12 @@ camel2snake and snake2camel
     camel2snake(name) and snake2camel(name) will convert name from camel to snake and from snake to camel respectively.
      
      
-     
+Change History
+==============
+
+Version 2.2
+-----------
+
+    1. MpLogger was change to have single log instead of two (error and debug)
+    #. MpLogger add new arguments: name, console, force_global, etc.
+    

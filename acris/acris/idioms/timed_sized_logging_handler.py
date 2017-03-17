@@ -25,7 +25,9 @@ from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 class TimedSizedRotatingHandler(TimedRotatingFileHandler, RotatingFileHandler):
     
     def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False, when='h', interval=1, utc=False, atTime=None):
-        """ Combines RotatingFileHandler TimedRotatingFileHandler)  """
+        """ 
+        Combines RotatingFileHandler TimedRotatingFileHandler)  
+        """
         RotatingFileHandler.__init__(self, filename=filename, mode=mode, maxBytes=maxBytes, backupCount=backupCount, encoding=encoding, delay=delay)
         TimedRotatingFileHandler.__init__(self, filename=filename, when=when, interval=interval, backupCount=backupCount, encoding=encoding, delay=delay, utc=utc, atTime=atTime)
 
@@ -48,4 +50,8 @@ class TimedSizedRotatingHandler(TimedRotatingFileHandler, RotatingFileHandler):
         """
         It is enough to use timed base rollover.
         """
-        return super(TimedRotatingFileHandler, self).getFilesToDelete()            
+        return super(TimedRotatingFileHandler, self).getFilesToDelete()        
+    
+        
+        
+        
