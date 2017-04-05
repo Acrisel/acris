@@ -1002,11 +1002,16 @@ xlsx2rst
 Change History
 ==============
 
+Version 2.3
+-----------
+
+    1. Improvement in how threaded passes result.
+    #. Add xlsx2rst utility.
+
+
 Version 2.2
 -----------
 
     1. MpLogger was change to have single log instead of two (error and debug).
     #. MpLogger add new arguments: name, console, force_global, etc.
-    #. Improvement in how threaded passes result.
-    #. Add xlsx2rst utility.
     
