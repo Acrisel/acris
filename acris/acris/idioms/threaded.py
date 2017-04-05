@@ -44,7 +44,7 @@ logger=logging.getLogger(__name__)
 
 __all__ = ['threaded']
 
-class AsyncResult(object): 
+class ThreadedResult(object): 
     """Represents an asynchronous operation that may not have completed yet.""" 
     def __init__(self): 
         self.completed = False 
@@ -55,10 +55,30 @@ class AsyncResult(object):
         self.__retval = None 
         self.__error = None 
         self.__lock = RLock()
+        self.name=None
+        self.running=False
+        self.thread=None
+        
+    def start(self):
+        self.running=True
+        
+    def started(self):
+        return self.running
+    
+    def set_thread(self, t):
+        self.thread=t
+        
+    def join(self, timeout=None):
+        if self.thread:
+            self.thread.join(timeout)
+
+    def completed(self):
+        return self.completed
 
     def complete(self):
         self.__lock.acquire()
         self.completed = True
+        self.running = False
         self.__wait.set()
         self.__lock.release()
     
@@ -83,6 +103,7 @@ class AsyncResult(object):
     
     def addCallback(self, callback, errback=None):
         self.__lock.acquire()
+        self.name=callback.name
         try:
             if self.completed:
                 if not self.failed:
@@ -96,6 +117,7 @@ class AsyncResult(object):
     
     def addErrback(self, errback):
         self.__lock.acquire()
+        self.name=errback.name
         try:
             if self.completed:
                 if self.failed:
@@ -112,14 +134,18 @@ class AsyncResult(object):
         else:
             raise self.__error
     result=property(__getResult)
+    
+    def syncResult(self):
+        return self.__getResult()
 
 
 class RetriveAsycValue(object):
     def __init__(self, name):
         self.name=name
+        self.result=None
         
     def __call__(self, retval):
-        print(self.name, ':', retval)  
+        self.result=retval 
     
 import inspect
 
@@ -133,8 +159,9 @@ def traces(trace, start=0, end=None):
 def threaded(method): 
     @wraps(method)
     def wrapper(*args, **kwargs): 
-        async_result = AsyncResult() 
+        async_result = ThreadedResult() 
         def _method(): 
+            async_result.start()
             try: 
                 result=method(*args, **kwargs) 
             except Exception as e: 
@@ -143,7 +170,9 @@ def threaded(method):
                 async_result.fail(trace)
             else:
                 async_result.succeed(result)
-        Thread(target = _method).start() 
+        t=Thread(target = _method)
+        t.start() 
+        async_result.set_thread(t)
         return async_result 
     return wrapper
 
@@ -155,8 +184,9 @@ class Threaded(object):
     def __call__(self,method):
         @wraps(method)
         def wrapper(*args, **kwargs): 
-            async_result = AsyncResult() 
+            async_result = ThreadedResult() 
             def _method(): 
+                async_result.start()
                 try: 
                     result=method(*args, **kwargs) 
                 except Exception as e: 
@@ -166,7 +196,9 @@ class Threaded(object):
                     async_result.fail(trace)
                 else:
                     async_result.succeed(result)
-            Thread(target = _method).start() 
+            t=Thread(target = _method)
+            t.start() 
+            async_result.set_thread(t)
             return async_result 
         return wrapper
         

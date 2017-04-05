@@ -30,21 +30,21 @@ Overview
 Programming Idoms
 =================
 
-threadit
+threaded
 --------
 
-    decorator for methods that can be executed as a thread.  
+    decorator for methods that can be executed as a thread.  RetriveAsycValue callable class used in the example below provide means to access results.  One can provide their own callable to pass results. 
 
 example
 ~~~~~~~
 
     .. code-block:: python
 
-        from acris import threadit
+        from acris import threaded, RetriveAsycValue
         from time import sleep
 
         class ThreadedExample(object):
-            @threadit
+            @threaded
             def proc(self, id_, num, stall):
                 s=num
                 while num > 0:
@@ -54,13 +54,6 @@ example
                     sleep(stall)
                 print("%s: %s" % (id_, s))  
                 return s
-          
-        class RetVal(object):
-            def __init__(self, name):
-                self.name=name
-        
-            def __call__(self, retval):
-                print(self.name, ':', retval)  
 
           
 example output
@@ -68,27 +61,48 @@ example output
 
     .. code-block:: python
 
-        te1=ThreadedExample().proc(1, 3, 1)
-        te2=ThreadedExample().proc(2, 3, 5)
+        print("starting workers")
+        te1=ThreadedExample().proc('TE1', 3, 1)
+        te2=ThreadedExample().proc('TE2', 3, 1)
     
-        te1.addCallback(RetVal('te1'))
-        te2.addCallback(RetVal('te2'))
+        print("collecting results")
+        te1_callback=RetriveAsycValue('te1')
+        te1.addCallback(te1_callback)
+        te2_callback=RetriveAsycValue('te2')
+        te2.addCallback(te2_callback)
+    
+        print('joining t1')
+        te1.join()
+        print('joined t1')
+        print('%s callback result: %s' % (te1_callback.name, te1_callback.result))
+        result=te1.syncResult()
+        print('te1 syncResult : %s' %result)
+    
+        result=te2.syncResult()
+        print('te2 syncResult : %s' % result)
+        print('%s callback result: %s' % (te2_callback.name, te2_callback.result))
 
     will produce:
 
     .. code-block:: python
 
-        1: 3
-        2: 3
-        1: 4
-        1: 5
-        1: 6
-        te1 : 6
-        2: 8
-        2: 13
-        2: 18
-        te2 : 18
-
+        starting workers
+        TE1: 3
+        TE2: 3
+        collecting results
+        joining t1
+        TE1: 4
+        TE2: 4
+        TE1: 5
+        TE2: 5
+        TE1: 6
+        TE2: 6
+        joined t1
+        te1 callback result: 6
+        te1 syncResult : 6
+        te2 syncResult : 6
+        te2 callback result: 6
+        
 Singleton and NamedSingleton
 ----------------------------
 
@@ -818,7 +832,7 @@ bee.py
 
     utility to run commands on multiple hosts and collect responses.
 
-    .. code-block :: python
+    .. code-block:: python
 
         usage: bee.py [-h] -c COMMAND [-p PARALLEL] -t HOST [-u USERNAME]
                       [--sudo-user USERNAME] [--keep-log]
@@ -843,7 +857,7 @@ csv2xlsx.py
     
     converts multiple CSV file to XLSX file. Each CSV file will end on its own sheet.
     
-    .. code-block :: python
+    .. code-block:: python
     
         usage: csv2xlsx.py [-h] [-d DELIMITER] [-o OUTFILE] CSV [CSV ...]
 
@@ -866,7 +880,7 @@ mail.py
 
     send mail utility and function API
 
-    .. code-block :: python
+    .. code-block:: python
 
         usage: mail.py [-h] [-a ATTACHMENT] [-o FILE] -s SUBJECT [-b BODY]
                        [-f MAILFROM] [-c CC] -t RECIPIENT
@@ -900,7 +914,7 @@ prettyxml.py
 
     Reformat XML in hierarchical structure.
 
-    .. code-block :: python
+    .. code-block:: python
     
         usage: pretty-xml.py [-h] [-o OUTFILE] [XML [XML ...]]
 
@@ -920,7 +934,7 @@ sshcmd
 
     Runs single shh command on remote host
 
-    .. code-block :: python
+    .. code-block:: python
     
         def sshcmd(cmd, host, password,)
         
@@ -934,7 +948,7 @@ touch
 
     UNIX like touch with ability to create missing folders.
 
-    .. code-block :: python
+    .. code-block:: python
 
         touch(path, times=None, dirs=False)
         
@@ -952,6 +966,37 @@ camel2snake and snake2camel
 ---------------------------
 
     camel2snake(name) and snake2camel(name) will convert name from camel to snake and from snake to camel respectively.
+    
+xlsx2rst
+--------
+
+    xlsx2rst is a utility and function to convert xlsx to restructuredtext.
+    
+    .. code-block:: python
+    
+        usage: xlsx2rst.py [-h] [-o RST] [-s [SHEET [SHEET ...]]]
+                           [--start-row [NUMBER]] [--end-row [NUMBER]]
+                           [--start-col [NUMBER]] [--end-col [NUMBER]] [-r [NUMBER]]
+                           [--one-file]
+                           XLSX
+
+        Converts xlsx workbook into restructured text format
+
+        positional arguments:
+          XLSX                  xlsx files to convert
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -o RST, --output RST  destination rst file
+          -s [SHEET [SHEET ...]], --sheet [SHEET [SHEET ...]]
+                                list of sheets; default to all available sheets
+          --start-row [NUMBER]  table start row, defaults to 1
+          --end-row [NUMBER]    table start col, defaults to 1
+          --start-col [NUMBER]  table start row, defaults to 0
+          --end-col [NUMBER]    table start col, defaults to 0
+          -r [NUMBER], --header [NUMBER]
+                                header row count
+          --one-file            when set, single file is created
      
      
 Change History
@@ -960,6 +1005,8 @@ Change History
 Version 2.2
 -----------
 
-    1. MpLogger was change to have single log instead of two (error and debug)
+    1. MpLogger was change to have single log instead of two (error and debug).
     #. MpLogger add new arguments: name, console, force_global, etc.
+    #. Improvement in how threaded passes result.
+    #. Add xlsx2rst utility.
     

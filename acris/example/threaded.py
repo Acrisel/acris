@@ -35,13 +35,33 @@ class ThreadedExample(object):
             sleep(stall)
         print("%s: %s" % (id_, s))  
         return s
-        
+ 
 if __name__ == '__main__':
+    
     print("starting workers")
-    te1=ThreadedExample().proc(1, 3, 1)
-    te2=ThreadedExample().proc(2, 3, 5)
+    te1=ThreadedExample().proc('TE1', 3, 1)
+    te2=ThreadedExample().proc('TE2', 3, 1)
     
     print("collecting results")
-    te1.addCallback(RetriveAsycValue('te1'))
-    te2.addCallback(RetriveAsycValue('te2'))
+    te1_callback=RetriveAsycValue('te1')
+    te1.addCallback(te1_callback)
+    te2_callback=RetriveAsycValue('te2')
+    te2.addCallback(te2_callback)
+    
+    
+    print('joining t1')
+    te1.join()
+    print('joined t1')
+    print('%s callback result: %s' % (te1_callback.name, te1_callback.result))
+    result=te1.syncResult()
+    print('te1 syncResult : %s' %result)
+    
+    result=te2.syncResult()
+    print('te2 syncResult : %s' % result)
+    print('%s callback result: %s' % (te2_callback.name, te2_callback.result))
+    
+    
+            
+    
+    
     

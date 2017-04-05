@@ -53,7 +53,7 @@ seq=0
 for limit in [1, 1]:
     seq+=1
     proc=mp.Process(target=subproc, args=(limit, ))
-    #proc.name='subproc-%s' % seq
+    proc.name='subproc-%s' % seq
     procs.append(proc)
     proc.start()
     
