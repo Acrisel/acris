@@ -79,7 +79,8 @@ scripts=['acris/osutils/commdir.py',
          'acris/osutils/bee.py', 
          'acris/osutils/csv2xlsx.py', 
          'acris/osutils/prettyxml.py', 
-         'acris/osutils/mail.py', ]
+         'acris/osutils/mail.py', 
+         'acris/misc/xlsx2rst.py',]
         
 # Find all sub packages
 import os
