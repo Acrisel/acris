@@ -25,8 +25,13 @@ from acris import threaded, RetriveAsycValue
 from time import sleep
 
 class ThreadedExample(object):
+    def proc(self, *args, **kwargs):
+        print("starting proc_td")
+        t=self.proc_td(*args, **kwargs)
+        return t
+    
     @threaded
-    def proc(self, id_, num, stall):
+    def proc_td(self, id_, num, stall):
         s=num
         while num > 0:
             print("%s: %s" % (id_, s))
@@ -58,6 +63,7 @@ if __name__ == '__main__':
     
     result=te2.syncResult()
     print('te2 syncResult : %s' % result)
+    te2.join()
     print('%s callback result: %s' % (te2_callback.name, te2_callback.result))
     
     

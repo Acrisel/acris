@@ -1,5 +1,6 @@
 from .VERSION import __version__
 
+from acris.idioms.decorate import traced_method
 from .idioms.threaded import Threaded, RetriveAsycValue, threaded
 from .idioms.singleton import Singleton, NamedSingleton
 from .idioms.sequence import Sequence
@@ -12,5 +13,4 @@ from .idioms.resource_pool import ResourcePool, Resource, Requestor, Requestors
 from acris.idioms.synchronize import Synchronization, SynchronizeAll, dont_synchronize
 from acris.idioms import synchronize
 from .idioms.mediator import Mediator
-from acris.idioms.decorate import traced_method
 from acris.misc.msort  import msort

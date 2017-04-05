@@ -44,6 +44,9 @@ logger=logging.getLogger(__name__)
 
 __all__ = ['threaded']
 
+from acris import traced_method
+traced=traced_method(print, print_args=False, print_result=False)
+
 class ThreadedResult(object): 
     """Represents an asynchronous operation that may not have completed yet.""" 
     def __init__(self): 
@@ -59,6 +62,12 @@ class ThreadedResult(object):
         self.running=False
         self.thread=None
         
+    def __release(self):
+        self.__lock.release()
+    
+    def __acquire(self):
+        self.__lock.acquire()
+    
     def start(self):
         self.running=True
         
@@ -76,11 +85,11 @@ class ThreadedResult(object):
         return self.completed
 
     def complete(self):
-        self.__lock.acquire()
+        self.__acquire()
         self.completed = True
         self.running = False
         self.__wait.set()
-        self.__lock.release()
+        self.__release()
     
     def succeed(self, retval):
         self.__retval = retval
@@ -101,22 +110,20 @@ class ThreadedResult(object):
         self.__callbacks = []
         self.__errbacks = []
     
-    def addCallback(self, callback, errback=None):
-        self.__lock.acquire()
-        self.name=callback.name
+    def addCallback(self, callback,):
+        self.__acquire()
+        #self.name=callback.name
         try:
             if self.completed:
                 if not self.failed:
                     callback(self.__retval)
             else:
                 self.__callbacks.append(callback)
-            if not errback == None:
-                self.addErrback(errback)
         finally:
-            self.__lock.release()
+            self.__release()
     
     def addErrback(self, errback):
-        self.__lock.acquire()
+        self.__acquire()
         self.name=errback.name
         try:
             if self.completed:
@@ -125,7 +132,7 @@ class ThreadedResult(object):
             else:
                 self.__errbacks.append(errback)
         finally:
-            self.__lock.release()
+            self.__release()
     
     def __getResult(self):
         self.__wait.wait()
@@ -159,21 +166,21 @@ def traces(trace, start=0, end=None):
 def threaded(method): 
     @wraps(method)
     def wrapper(*args, **kwargs): 
-        async_result = ThreadedResult() 
+        treated_result = ThreadedResult() 
         def _method(): 
-            async_result.start()
+            treated_result.start()
             try: 
                 result=method(*args, **kwargs) 
             except Exception as e: 
                 trace=inspect.trace()
                 trace=traces(trace, 2)
-                async_result.fail(trace)
+                treated_result.fail(trace)
             else:
-                async_result.succeed(result)
+                treated_result.succeed(result)
         t=Thread(target = _method)
         t.start() 
-        async_result.set_thread(t)
-        return async_result 
+        treated_result.set_thread(t)
+        return treated_result 
     return wrapper
 
 
