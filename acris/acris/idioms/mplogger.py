@@ -257,7 +257,8 @@ class MpLogger(object):
         logger = logging.getLogger(name=self.logging_root)
         logger.setLevel(self.logging_level)
             
-        q=mp.Queue()
+        manager=mp.Manager()    
+        q=manager.Queue()
         queue_handler = QueueHandler(q)
         logger.addHandler(queue_handler)
         
@@ -286,3 +287,6 @@ class MpLogger(object):
         if self.queue_listener:
             self.queue_listener.enqueue_sentinel()
 
+if __name__ == '__main__':
+    mp.freeze_support()
+    mp.set_start_method('spawn')

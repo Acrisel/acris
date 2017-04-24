@@ -1007,6 +1007,7 @@ Version 2.3
 
     1. Improvement in how threaded passes result.
     #. Add xlsx2rst utility.
+    #. Fix bug with MpLogger multiprocessing queue (changed to use Manager().)
 
 
 Version 2.2

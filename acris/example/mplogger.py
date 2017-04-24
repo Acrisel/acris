@@ -27,15 +27,12 @@ from acris import MpLogger
 import multiprocessing as mp
 import os
 
-logger=logging.getLogger(__name__)
-
-
 def subproc(limit=1):
-    
+    logger=logging.getLogger("acris.subproc")
     for i in range(limit):
         sleep_time=3/random.randint(1,10)
         time.sleep(sleep_time)
-        logger.info("%s/%s - sleep %4.4ssec" % (i, limit, sleep_time))
+        logger.debug("%s/%s - sleep %4.4ssec" % (i, limit, sleep_time))
 
 level_formats={logging.DEBUG:"[ %(asctime)-26s ][ %(processName)-11s ][ %(levelname)-7s ][ %(message)s ][ %(module)s.%(funcName)s(%(lineno)d) ]",
                 'default':   "[ %(asctime)-26s ][ %(processName)-11s ][ %(levelname)-7s ][ %(message)s ]",
@@ -47,7 +44,9 @@ logdir=os.getcwd()
 mplogger=MpLogger(logging_level=logging.DEBUG, level_formats=level_formats, datefmt='%Y-%m-%d,%H:%M:%S.%f')
 mplogger.start()
 
-logger.debug("starting sub processes")
+logger=logging.getLogger('acris')
+
+logger.info("starting sub processes")
 procs=list()
 seq=0
 for limit in [1, 1]:
@@ -61,7 +60,11 @@ for proc in procs:
     if proc:
         proc.join()
     
-logger.debug("sub processes completed")
+logger.info("sub processes completed")
 
 mplogger.stop()
+
+if __name__=='__main__':
+    mp.freeze_support()
+    #mp.set_start_method('spawn')
 
