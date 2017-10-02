@@ -20,18 +20,19 @@
 #
 ##############################################################################
 
-from acris.idioms.data_types import MergedChainedDict
-from acris.idioms.decorate import traced_method
-from acris.idioms.sequence import Sequence
 from acris.idioms.singleton import NamedSingleton
+from acris.idioms.sequence import Sequence
+from acris.idioms.data_types import MergedChainedDict
 from acris.idioms.threaded import Threaded
 import threading
 from collections import OrderedDict
 import queue
+from acris.idioms.decorate import traced_method
 import time
 import logging
 import inspect
 from collections import namedtuple
+from acris.idioms.decorate import LogCaller
 
 logger=logging.getLogger(__name__)
 
@@ -54,11 +55,9 @@ class Resource(object):
         self.resource_name=self.__class__.__name__
         self.pool=None
         
-    '''
     def setattrib(self, name, value):
         setattr(self, name, value)
         return self
-    '''
         
     def __repr__(self):
         result="Resource(name:%s.%s)" % (self.pool, self.resource_name,)
@@ -408,7 +407,7 @@ class RequestorCallback(object):
         self.q.put(ticket)
 
 class Requestor(object):
-    ''' Manages a single request from multiple resource pools
+    ''' Manages a single request of multiple resource pools
     '''
         
     def __init__(self, request, wait=-1, callback=None, hold_time=None, expire=None, audit=True):
@@ -420,7 +419,7 @@ class Requestor(object):
             callback: callable to callback when resources are reserved
             hold_time: how long to hold resources in reserved
             expire: seconds to limit use of resources.
-            audit: if True, ensures resources returened are from the same requestor 
+            audit: if True, ensures resources returned are from the same requestor 
             
         '''
         self.__request=dict([(r.name, (r,count)) for r, count in request])

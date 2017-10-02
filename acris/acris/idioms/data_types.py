@@ -20,16 +20,56 @@
 #
 ##############################################################################
 
+import unittest
+import functools 
+
 class MergedChainedDict(dict):
-    def __init__(self, *args):
+    def __init__(self, *args, submerge=False):
+        ''' Merge list of dicts.  
+        Merge is such that significant (left) wins over least significant (right).
+        
+        Args: 
+            args: list of dicts where left most is most significant.
+            submerge: if an entity in a dictionary is dictionary, merge-chain that entity.
+        '''
         super().__init__()
         args=list(args)
-        for arg in args[::-1]:
-            self.update(arg)
+        if not submerge:
+            for arg in args[::-1]:
+                self.update(arg)
+        else:
+            keys = functools.reduce(lambda x,y: x+y, [list(arg.keys()) for arg in args], list())
+            for key in set(keys):
+                values = [arg.get(key) for arg in args]
+                values = [value for value in values if value is not None]
+                if len(values) < 1: 
+                    value = None
+                else:
+                    value0 = values[0] 
+                    if not isinstance(value0, dict):
+                        value = value0
+                    else: # this is a dict
+                        value = MergedChainedDict(*values, submerge=True)
+                self[key] = value
+
+class TestMergedChainedDict(unittest.TestCase):
+
+    def test_uni_depth(self):
+        a = {1:11, 2:22}
+        b = {3:33, 4:44}
+        c = {1:55, 4:66}
+        d = MergedChainedDict(c, b, a)
+        d_expected = {1: 55, 2: 22, 3: 33, 4: 66}
+        self.assertEqual(d, d_expected)
+            
+    def test_two_depth_submerge(self):
+        a = {1:11, 2:22, 3:{'a': 1, 'b':2, 'c':5}}
+        b = {3:{'a':2, 'c': 7}, 4:44}
+        c = {1:55, 4:66, 3:{'a': 3, 'b':2}}
+        d = MergedChainedDict(c, b, a, submerge=True)
+        d_expected = {1: 55, 2: 22, 3: {'a': 3, 'b': 2, 'c': 7}, 4: 66}
+        self.assertEqual(d, d_expected)
             
 if __name__ == '__main__':
-    a={1:11, 2:22}
-    b={3:33, 4:44}
-    c={1:55, 4:66}
-    d=MergedChainedDict(c, b, a)
-    print(d)
+    
+    unittest.main()

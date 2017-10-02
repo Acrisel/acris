@@ -65,7 +65,7 @@ def traced_method(print_func=None, print_args=False, print_result=False):
                 func_args="[ args: %s ][ kwargs: %s ]" % (show_args, kwargs)
             if print_func:
                 #print_func('[ %s ][ %s ][ entering]%s[ %s ]' % (str(start), text_id, func_args,caller))
-                print_func('[ %s ][ entering]%s[ %s ]' % (text_id, func_args,caller))
+                print_func('[ %s ][ entering]%s[ %s ]' % (str(text_id), str(func_args), str(caller)))
             result=method(*args, **kwargs)
             #print_func('Result: %s' % (repr(result),))
             #print(str(result))
@@ -75,7 +75,7 @@ def traced_method(print_func=None, print_args=False, print_result=False):
             if print_func:
                 #print_func('Result: %s' % (repr(result),))
                 #print_func('[ %s ][ %s ][ exiting ] [ time span: %s][ %s ]' % (str(finish), text_id, str(finish-start), caller))
-                print_func('[ %s ][ exiting ] [ time span: %s]%s[ %s ]' % (text_id, str(finish-start), func_result, caller))
+                print_func('[ %s ][ exiting ] [ time span: %s]%s[ %s ]' % (str(text_id), str(finish-start), str(func_result), str(caller)))
             return result
         return wrapper
     return print_method_name

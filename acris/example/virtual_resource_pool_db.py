@@ -21,10 +21,9 @@
 ##############################################################################
 
 import time
-from acris import resource_pool as rp
+from acris import virtual_resource_pool_db as rp
 from acris import threaded
 from acrilog import create_stream_handler
-import queue
 from datetime import datetime
 import logging
 
@@ -36,7 +35,9 @@ logger.setLevel(logging.INFO)
 class MyResource1(rp.Resource): pass
 class MyResource2(rp.Resource): pass
 
-rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+db_pool=rp.ResourcePool()
+
+rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 1, }).load()                   
 rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
 
 @threaded
@@ -49,10 +50,10 @@ def worker_awaiting(name, rp):
     rp.put(*r)
     
 
-r1=worker_awaiting('>>> w11-direct', rp1)    
-r2=worker_awaiting('>>> w21-direct', rp2)    
-r3=worker_awaiting('>>> w22-direct', rp2)    
-r4=worker_awaiting('>>> w12-direct', rp1) 
+r1=worker_awaiting('>>> w1-direct', rp1)    
+r2=worker_awaiting('>>> w2-direct', rp2)    
+r3=worker_awaiting('>>> w3-direct', rp2)    
+r4=worker_awaiting('>>> w4-direct', rp1) 
 
 
 

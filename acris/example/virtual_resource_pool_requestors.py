@@ -23,14 +23,14 @@
 import time
 from acris import virtual_resource_pool as rp
 from acris import Threaded
-from acris import create_stream_handler
+from acrilog import create_stream_handler
 import queue
 from datetime import datetime
 import logging
 
 logger=logging.getLogger()
-handler=create_stream_handler(logging_level=logging.DEBUG)
-logger.addHandler(handler)
+handlers=create_stream_handler(logging_level=logging.DEBUG)
+for handler in handlers: logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
 class MyResource1(rp.Resource): pass
@@ -77,3 +77,5 @@ r1=worker_callback('>>> r1', [(rp1,1), (rp2,1)])
 r2=worker_callback('>>> r2', [(rp1,1),])    
 r3=worker_callback('>>> r3', [(rp1,1), (rp2,1)])    
 r4=worker_callback('>>> r4', [(rp1,1),]) 
+
+time.sleep(10)

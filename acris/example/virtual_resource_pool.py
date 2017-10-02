@@ -23,7 +23,7 @@
 import time
 from acris import virtual_resource_pool as rp
 from acris import threaded
-from acris import create_stream_handler
+from acrilog import create_stream_handler
 from datetime import datetime
 import logging
 

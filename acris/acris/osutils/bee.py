@@ -40,7 +40,7 @@ def mssh1(commands, host, username, password, sudouser, output):
 
     prefix=''
     if sudouser:
-      prefix='sudo -u {} '.format(sudouser)
+        prefix='sudo -u {} '.format(sudouser)
     
     for command in commands:
         cmd=prefix+command
