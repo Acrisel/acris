@@ -20,15 +20,11 @@
 #
 ##############################################################################
 
-from .singleton import NamedSingleton
-from .sequence import Sequence
-from .data_types import MergedChainedDict
-from .threaded import Threaded
+from acrilib import NamedSingleton, Sequence, MergedChainedDict, Threaded, traced_method
 import threading
 from abc import abstractmethod
 from collections import OrderedDict
 import queue
-from acris.idioms.decorate import traced_method
 import time
 import logging
 import inspect

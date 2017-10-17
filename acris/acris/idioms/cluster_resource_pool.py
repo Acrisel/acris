@@ -20,19 +20,19 @@
 #
 ##############################################################################
 
-from acris.idioms.singleton import NamedSingleton
-from acris.idioms.sequence import Sequence
-from acris.idioms.data_types import MergedChainedDict
-from acris.idioms.threaded import Threaded
+from acris import NamedSingleton
+from acris import Sequence
+from acris import MergedChainedDict
+from acris import Threaded
 import threading
 from collections import OrderedDict
 import queue
-from acris.idioms.decorate import traced_method
+from acris import traced_method
 import time
 import logging
 import inspect
 from collections import namedtuple
-from acris.idioms.decorate import LogCaller
+from acris import LogCaller
 
 logger=logging.getLogger(__name__)
 

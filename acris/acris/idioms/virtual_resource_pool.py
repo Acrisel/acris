@@ -20,11 +20,7 @@
 #
 ##############################################################################
 
-from acris.idioms.data_types import MergedChainedDict
-from acris.idioms.decorate import traced_method
-from acris.idioms.sequence import Sequence
-from acris.idioms.singleton import NamedSingleton
-from acris.idioms.threaded import Threaded
+from acrilib import MergedChainedDict, traced_method, Sequence, NamedSingleton, Threaded
 import threading
 from collections import OrderedDict
 import queue

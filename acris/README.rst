@@ -33,6 +33,7 @@ Programming Idoms
 threaded
 --------
 
+    **Note:** inherent from acrilib
     decorator for methods that can be executed as a thread.  RetriveAsycValue callable class used in the example below provide means to access results.  One can provide their own callable to pass results. 
 
 example
@@ -46,7 +47,7 @@ example
         class ThreadedExample(object):
             @threaded
             def proc(self, id_, num, stall):
-                s=num
+                s = num
                 while num > 0:
                     print("%s: %s" % (id_, s))
                     num -= 1
@@ -62,23 +63,23 @@ example output
     .. code-block:: python
 
         print("starting workers")
-        te1=ThreadedExample().proc('TE1', 3, 1)
-        te2=ThreadedExample().proc('TE2', 3, 1)
+        te1 = ThreadedExample().proc('TE1', 3, 1)
+        te2 = ThreadedExample().proc('TE2', 3, 1)
     
         print("collecting results")
-        te1_callback=RetriveAsycValue('te1')
+        te1_callback = RetriveAsycValue('te1')
         te1.addCallback(te1_callback)
-        te2_callback=RetriveAsycValue('te2')
+        te2_callback = RetriveAsycValue('te2')
         te2.addCallback(te2_callback)
     
         print('joining t1')
         te1.join()
         print('joined t1')
         print('%s callback result: %s' % (te1_callback.name, te1_callback.result))
-        result=te1.syncResult()
+        result = te1.syncResult()
         print('te1 syncResult : %s' %result)
     
-        result=te2.syncResult()
+        result = te2.syncResult()
         print('te2 syncResult : %s' % result)
         print('%s callback result: %s' % (te2_callback.name, te2_callback.result))
 
@@ -106,6 +107,7 @@ example output
 Singleton and NamedSingleton
 ----------------------------
 
+    **Note:** inherent from acrilib
     meta class that creates singleton footprint of classes inheriting from it.
 
 Singleton example
@@ -116,10 +118,10 @@ Singleton example
         from acris import Singleton
 
         class Sequence(Singleton):
-            step_id=0
+            step_id = 0
     
             def __call__(self):
-                step_id=self.step_id
+                step_id = self.step_id
                 self.step_id += 1
                 return step_id  
 
@@ -128,10 +130,10 @@ example output
 
     .. code-block:: python
  
-        A=Sequence()
+        A = Sequence()
         print('A', A())
         print('A', A())
-        B=Sequence()
+        B = Sequence()
         print('B', B()) 
 
     will produce:
@@ -150,13 +152,13 @@ NamedSingleton example
         from acris import Singleton
 
         class Sequence(NamedSingleton):
-            step_id=0
+            step_id = 0
             
             def __init__(self, name=''):
-                self.name=name
+                self.name = name
     
             def __call__(self,):
-                step_id=self.step_id
+                step_id = self.step_id
                 self.step_id += 1
                 return step_id  
 
@@ -165,10 +167,10 @@ example output
 
     .. code-block:: python
  
-        A=Sequence('A')
+        A = Sequence('A')
         print(A.name, A())
         print(A.name, A())
-        B=Sequence('B')
+        B = Sequence('B')
         print(B.name, B()) 
 
     will produce:
@@ -182,6 +184,7 @@ example output
 Sequence
 --------
 
+    **Note:** inherent from acrilib
     meta class to produce sequences.  Sequence allows creating different sequences using name tags.
 
 example
@@ -191,16 +194,16 @@ example
 
         from acris import Sequence
 
-        A=Sequence('A')
+        A = Sequence('A')
         print('A', A())
         print('A', A())
-        B=Sequence('B')
+        B = Sequence('B')
         print('B', B()) 
     
-        A=Sequence('A')
+        A = Sequence('A')
         print('A', A())
         print('A', A())
-        B=Sequence('B')
+        B = Sequence('B')
         print('B', B()) 
 
 example output
@@ -228,6 +231,7 @@ MpLogger and LevelBasedFormatter
 Decorators
 ----------
 
+    **Note:** inherent from acrilib
     Useful decorators for production and debug.
     
 traced_method
@@ -239,26 +243,26 @@ traced_method
     
         from acris import traced_method
 
-        traced=traced_method(print, print_args=True, print_result=True)
+        traced = traced_method(print, print_args=True, print_result=True)
 
         class Oper(object):
             def __init__(self, value):
-                self.value=value
+                self.value = value
         
             def __repr__(self):
                 return str(self.value)
         
             @traced
             def mul(self, value):
-                self.value*=value 
+                self.value *= value 
                 return self   
     
             @traced
             def add(self, value):
-                self.value+=value
+                self.value += value
                 return self
     
-        o=Oper(3)
+        o = Oper(3)
         print(o.add(2).mul(5).add(7).mul(8))
         
     would result with the following output:
@@ -278,6 +282,7 @@ traced_method
 Data Types
 ----------
 
+    **Note:** inherent from acrilib
     varies derivative of Python data types
 
 MergeChainedDict
@@ -324,23 +329,23 @@ Sync Example
 
         class MyResource2(rp.Resource): pass
 
-        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
-        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+        rp1 = rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2 = rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
 
         @Threaded()
         def worker_awaiting(name, rp):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name ) )
-            r=rp.get()
+            r = rp.get()
             print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
             time.sleep(4)
             print('[ %s ] %s returning %s' % (str(datetime.now()), name, repr(r)))
             rp.put(*r)
     
 
-        r1=worker_awaiting('>>> w11-direct', rp1)    
-        r2=worker_awaiting('>>> w21-direct', rp2)    
-        r3=worker_awaiting('>>> w22-direct', rp2)    
-        r4=worker_awaiting('>>> w12-direct', rp1)   
+        r1 = worker_awaiting('>>> w11-direct', rp1)    
+        r2 = worker_awaiting('>>> w21-direct', rp2)    
+        r3 = worker_awaiting('>>> w22-direct', rp2)    
+        r4 = worker_awaiting('>>> w12-direct', rp1)   
               
 Sync Example Output
 ~~~~~~~~~~~~~~~~~~~
@@ -375,8 +380,8 @@ Async Example
     
         class MyResource2(rp.Resource): pass
 
-        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
-        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+        rp1 = rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2 = rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
    
         class Callback(object):
             def __init__(self, notify_queue):
@@ -388,23 +393,23 @@ Async Example
         def worker_callback(name, rp):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
             notify_queue=queue.Queue()
-            r=rp.get(callback=Callback(notify_queue))
+            r = rp.get(callback=Callback(notify_queue))
 
             if not r:
                 print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
                 print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
-                ticket=notify_queue.get()
-                r=rp.get(ticket=ticket)
+                ticket = notify_queue.get()
+                r = rp.get(ticket=ticket)
     
             print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(r)))
             time.sleep(2)
             print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(r)))
             rp.put(*r)
 
-        r1=worker_callback('>>> w11-callback', rp1)    
-        r2=worker_callback('>>> w21-callback', rp2)    
-        r3=worker_callback('>>> w22-callback', rp2)    
-        r4=worker_callback('>>> w12-callback', rp1)  
+        r1 = worker_callback('>>> w11-callback', rp1)    
+        r2 = worker_callback('>>> w21-callback', rp2)    
+        r3 = worker_callback('>>> w22-callback', rp2)    
+        r4 = worker_callback('>>> w12-callback', rp1)  
                      
 Async Example Output
 ~~~~~~~~~~~~~~~~~~~~
@@ -441,12 +446,12 @@ Requestor Example
     
         class MyResource2(rp.Resource): pass
 
-        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
-        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 2, }).load()
+        rp1 = rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2 = rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 2, }).load()
    
         class Callback(object):
             def __init__(self, notify_queue):
-                self.q=notify_queue
+                self.q = notify_queue
             def __call__(self, ready=False):
                 self.q.put(ready)
 
@@ -454,26 +459,26 @@ Requestor Example
         def worker_callback(name, rps):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
             notify_queue=queue.Queue()
-            callback=Callback(notify_queue, name=name)
-            request=rp.Requestor(request=rps, callback=callback)
+            callback = Callback(notify_queue, name=name)
+            request = rp.Requestor(request=rps, callback=callback)
 
             if request.is_reserved():
-                resources=request.get()
+                resources = request.get()
             else:
                 print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
                 print('[ %s ] %s waiting for resources' % (str(datetime.now()), name,))
                 notify_queue.get()
-                resources=request.get()
+                resources = request.get()
 
             print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
             time.sleep(2)
             print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
             request.put(*resources)
 
-        r1=worker_callback('>>> w11-callback', [(rp1,1),])    
-        r2=worker_callback('>>> w21-callback', [(rp1,1),(rp2,1)])    
-        r3=worker_callback('>>> w22-callback', [(rp1,1),(rp2,1)])    
-        r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
+        r1 = worker_callback('>>> w11-callback', [(rp1,1),])    
+        r2 = worker_callback('>>> w21-callback', [(rp1,1),(rp2,1)])    
+        r3 = worker_callback('>>> w22-callback', [(rp1,1),(rp2,1)])    
+        r4 = worker_callback('>>> w12-callback', [(rp1,1),]) 
                      
 Requestor Example Output
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -519,39 +524,39 @@ Virtual Requestors Example
         class MyResource1(rp.Resource): pass
         class MyResource2(rp.Resource): pass
 
-        rp1=rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
-        rp2=rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
+        rp1 = rp.ResourcePool('RP1', resource_cls=MyResource1, policy={'resource_limit': 2, }).load()                   
+        rp2 = rp.ResourcePool('RP2', resource_cls=MyResource2, policy={'resource_limit': 1, }).load()
    
         class Callback(object):
             def __init__(self, notify_queue, name=''):
-                self.q=notify_queue
-                self.name=name
+                self.q = notify_queue
+                self.name = name
             def __call__(self,received=False):
                 self.q.put(received)
         
-        requestors=rp.Requestors()
+        requestors = rp.Requestors()
 
         @Threaded()
         def worker_callback(name, rps):
             print('[ %s ] %s getting resource' % (str(datetime.now()), name))
-            notify_queue=queue.Queue()
-            callback=Callback(notify_queue, name=name)
-            request_id=requestors.reserve(request=rps, callback=callback)
+            notify_queue = queue.Queue()
+            callback = Callback(notify_queue, name=name)
+            request_id = requestors.reserve(request=rps, callback=callback)
 
             if not requestors.is_reserved(request_id):
                 print('[ %s ] %s doing work before resource available' % (str(datetime.now()), name,))
                 notify_queue.get()
-            resources=requestors.get(request_id)
+            resources = requestors.get(request_id)
 
             print('[ %s ] %s doing work (%s)' % (str(datetime.now()), name, repr(resources)))
             time.sleep(1)
             print('[ %s ] %s returning (%s)' % (str(datetime.now()), name, repr(resources)))
             requestors.put_requested(rps)
 
-        r2=worker_callback('>>> w21-callback', [(rp1,1), (rp2,1)])    
-        r1=worker_callback('>>> w11-callback', [(rp1,1),])    
-        r3=worker_callback('>>> w22-callback', [(rp1,1), (rp2,1)])    
-        r4=worker_callback('>>> w12-callback', [(rp1,1),]) 
+        r2 = worker_callback('>>> w21-callback', [(rp1,1), (rp2,1)])    
+        r1 = worker_callback('>>> w11-callback', [(rp1,1),])    
+        r3 = worker_callback('>>> w22-callback', [(rp1,1), (rp2,1)])    
+        r4 = worker_callback('>>> w12-callback', [(rp1,1),]) 
  
                      
 Virtual Requestor Example Output
@@ -577,6 +582,7 @@ Virtual Requestor Example Output
 Mediator
 --------
     
+    **Note:** inherent from acrilib
     Class interface to generator allowing query of has_next()
     
 Example 
@@ -592,8 +598,8 @@ Example
                 yield i
                 i += 1
 
-        n=10
-        m=Mediator(yrange(n))
+        n = 10
+        m = Mediator(yrange(n))
         for i in range(n):
             print(i, m.has_next(3), next(m))
         print(i, m.has_next(), next(m))
@@ -919,4 +925,5 @@ Version 3.0
 -----------
 
     1. MpLogger moved to acrilog project
+    2. Some functions moved to acrilib project
     
