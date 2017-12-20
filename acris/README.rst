@@ -39,7 +39,7 @@ threaded
 example
 ~~~~~~~
 
-    .. code-block:: python
+    .. code:: python
 
         from acris import threaded, RetriveAsycValue
         from time import sleep
@@ -864,6 +864,32 @@ touch
             dirs: if set, create missing folders
 
 
+mrun
+----
+
+    Runs UNIX command on multiple directories.
+    
+    .. code-block:: python
+    
+        usage: mrun.py [-h] [--cwd [DIR [DIR ...]]] [--exception TAG] [--nostop]
+                       [--verbose]
+                       ...
+
+        Run command in multiple directories. Example: mrun --cwd dir1 dir2 -- git add .
+        .
+
+        positional arguments:
+          cmd                   command to run.
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          --cwd [DIR [DIR ...]]
+                                path where command should cd to; or file that congaing
+                                list of directories to operate on.
+          --exception TAG       tag exception message.
+          --nostop              continue even if failed to run in one place.
+          --verbose, -v         print messages as it goes.
+        
 Misc
 ====
 
@@ -926,4 +952,5 @@ Version 3.0
 
     1. MpLogger moved to acrilog project
     2. Some functions moved to acrilib project
+    3. Added mrun for execute command on multiple directories (for git operations)
     

@@ -351,8 +351,8 @@ def _cmdargs():
                         help='target folder for the comparison')
     parser.add_argument('--quiet', dest='quiet', action='store_true',
                         help='avoid writing any report out, default: False')
-    parser.add_argument('--out', metavar='REPORT', dest='out', nargs='?',
-                        help='file to write report to, default: stdout')
+    # parser.add_argument('--out', metavar='REPORT', dest='out', nargs='?',
+    #                    help='file to write report to, default: stdout')
     parser.add_argument('--follow', action='store_true',
                         help='follow links when walking folders, default: False')
     parser.add_argument('--detailed', action='store_true',

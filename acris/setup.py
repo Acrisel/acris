@@ -80,6 +80,7 @@ scripts=['acris/osutils/commdir.py',
          'acris/osutils/csv2xlsx.py',
          'acris/osutils/prettyxml.py',
          'acris/osutils/mail.py',
+         'acris/osutils/mrun.py',
          'acris/misc/xlsx2rst.py',]
 
 # Find all sub packages

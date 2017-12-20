@@ -32,3 +32,4 @@ from .idioms.resource_pool import ResourcePool, Resource, Requestor, Requestors
 from acrilib import Synchronization, SynchronizeAll, dont_synchronize, do_synchronize, synchronized
 from acrilib import Mediator
 from acris.misc.msort  import msort
+from acris.osutils.mail import send_mail
