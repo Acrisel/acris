@@ -87,7 +87,12 @@ def mrun(cmd, cwd=None, max_retries=0, exception_tag='', ignore_exception=False,
         print('Command: {}'.format(cmd))
 
     for cwd_ in cwd:
+        retries = max_retries 
         while True:
+            if verbose:
+                if retries < max_retries:
+                    print("{}: Retrying after failure: {}".format(cwd_, max_retries - retries))
+
             try:
                 proc_complete = run(
                     cmd, shell=False, cwd=cwd_,
@@ -100,12 +105,11 @@ def mrun(cmd, cwd=None, max_retries=0, exception_tag='', ignore_exception=False,
                 # create CompletedProcess for this failure
                 proc_complete = CompletedProcess(args=cmd, returncode=1,
                                                  stderr="{}\n".format(msg).encode())
-                if max_retries > 0:
-                    max_retries -= 1
-                else:
-                    break
-            else:
+            # if command failed, check max_retries
+            if proc_complete.returncode == 0 or retries == 0:
                 break
+
+            retries -= 1
 
         result = proc_complete
         results[cwd_] = result
@@ -134,10 +138,10 @@ Example:
                               'to operate on.'))
     parser.add_argument('--exception', metavar='TAG', type=str, required=False, dest='exception_tag',
                         help='tag exception message.')
-    parser.add_argument('--nostop', action='store_true', dest='ignore_exception',
+    parser.add_argument('--nostop', action='store_true', dest='ignore_exception', default=False,
                         help='continue even if failed to run in one place.')
     parser.add_argument('--retries', '-r', type=int, dest='max_retries', default=0,
-                        help='allows maximum of retries if command failed.')
+                        help='allows maximum of retries if command failed. value of -1 will retry forever.')
     parser.add_argument('--verbose', '-v', action='store_true', 
                         help='print messages as it goes.')
     parser.add_argument('cmd', nargs=argparse.REMAINDER,
