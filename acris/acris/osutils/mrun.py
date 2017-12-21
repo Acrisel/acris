@@ -39,17 +39,19 @@ def read_cwd_file(rc):
         rcfiles = [f for f in names if f]
     return rcfiles
 
-def mrun(cmd, cwd=None, exception_tag='', ignore_exception=False, verbose=False):
+
+def mrun(cmd, cwd=None, max_retries=0, exception_tag='', ignore_exception=False, verbose=False):
     ''' perform git command on repositories.
 
     Args:
         cmd: list of command elements.
-        exception_tag: tag to include in exception message.
-        ignore_exception: avoid raise exception on failure.
         cwd: list of locations to run command in;
             if cwd is a file containing, it assumes it contains 
             list of directories.
             Defaults to $PWD/.mrun or ~/.mrun,  whatever found first.
+        max_retries: defines maximum limit for retries.
+        exception_tag: tag to include in exception message.
+        ignore_exception: avoid raise exception on failure.
         verbose: prints detailed information.
 
     Process:
@@ -85,18 +87,25 @@ def mrun(cmd, cwd=None, exception_tag='', ignore_exception=False, verbose=False)
         print('Command: {}'.format(cmd))
 
     for cwd_ in cwd:
-        try:
-            proc_complete = run(
-                cmd, shell=False, cwd=cwd_,
-                stdout=PIPE, stderr=PIPE)
-        except Exception as e:
-            msg = "Failed {}; {}".format(exception_tag, repr(e))
-            if not ignore_exception:
-                raise Exception(msg) from e
+        while True:
+            try:
+                proc_complete = run(
+                    cmd, shell=False, cwd=cwd_,
+                    stdout=PIPE, stderr=PIPE)
+            except Exception as e:
+                msg = "Failed {}; {}".format(exception_tag, repr(e))
+                if not ignore_exception:
+                    raise Exception(msg) from e
 
-            # create CompletedProcess for this failure
-            proc_complete = CompletedProcess(args=cmd, returncode=1,
-                                             stderr="{}\n".format(msg).encode())
+                # create CompletedProcess for this failure
+                proc_complete = CompletedProcess(args=cmd, returncode=1,
+                                                 stderr="{}\n".format(msg).encode())
+                if max_retries > 0:
+                    max_retries -= 1
+                else:
+                    break
+            else:
+                break
 
         result = proc_complete
         results[cwd_] = result
@@ -127,6 +136,8 @@ Example:
                         help='tag exception message.')
     parser.add_argument('--nostop', action='store_true', dest='ignore_exception',
                         help='continue even if failed to run in one place.')
+    parser.add_argument('--retries', '-r', type=int, dest='max_retries', default=0,
+                        help='allows maximum of retries if command failed.')
     parser.add_argument('--verbose', '-v', action='store_true', 
                         help='print messages as it goes.')
     parser.add_argument('cmd', nargs=argparse.REMAINDER,
