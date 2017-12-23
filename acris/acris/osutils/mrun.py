@@ -49,7 +49,7 @@ def mrun(cmd, cwd=None, max_retries=0, exception_tag='', ignore_exception=False,
             if cwd is a file containing, it assumes it contains 
             list of directories.
             Defaults to $PWD/.mrun or ~/.mrun,  whatever found first.
-        max_retries: defines maximum limit for retries.
+        max_retries: defines maximum limit for retries. -1: retry forever.
         exception_tag: tag to include in exception message.
         ignore_exception: avoid raise exception on failure.
         verbose: prints detailed information.
@@ -105,6 +105,7 @@ def mrun(cmd, cwd=None, max_retries=0, exception_tag='', ignore_exception=False,
                 # create CompletedProcess for this failure
                 proc_complete = CompletedProcess(args=cmd, returncode=1,
                                                  stderr="{}\n".format(msg).encode())
+
             # if command failed, check max_retries
             if proc_complete.returncode == 0 or retries == 0:
                 break
