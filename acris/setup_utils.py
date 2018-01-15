@@ -14,9 +14,11 @@ def read(*parts, encoding="utf8"):
     """
     # if not here:
     #     here = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(*parts)
+    with codecs.open(path, "rb", encoding) as f:
+        result = f.read()
 
-    with codecs.open(os.path.join(*parts), "rb", encoding) as f:
-        return f.read()
+    return result
 
 
 def find_meta(meta, file, error=True):
@@ -230,8 +232,10 @@ def scripts(package):
     bindir = os.path.join(package, 'bin')
     scripts = []
     if os.path.isdir(bindir):
-        scripts = [file for file in os.listdir(bindir)
-                   if os.path.isfile(file)]
+        for file in os.listdir(bindir):
+            file = os.path.join(bindir, file)
+            if os.path.isfile(file) and not file.endswith('__init__.py'):
+                scripts += [file]
     return scripts
 
 
